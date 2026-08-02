@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 จดแคลประจำวัน</title>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <style>
         * {
             margin: 0;
@@ -392,12 +392,9 @@
         <!-- Login Section -->
         <div id="loginSection" class="login-section">
             <h1>📊 จดแคลประจำวัน</h1>
-            <p>เข้าสู่ระบบด้วย Google เพื่อเริ่มจดแคล</p>
-            <div id="g_id_onload"
-                 data-client_id="259066830160-gs126g7uj9oqo18fenhu9fjcr1auhl3d.apps.googleusercontent.com"
-                 data-callback="handleCredentialResponse">
-            </div>
-            <div class="g_id_signin" data-type="standard"></div>
+            <p>ใส่อีเมลเพื่อเริ่มจดแคล</p>
+            <input type="email" id="emailInput" placeholder="example@gmail.com" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; margin-bottom: 1rem; box-sizing: border-box;">
+            <button onclick="loginWithEmail()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, rgba(255,192,203,0.6), rgba(255,182,193,0.6)); border: none; border-radius: 8px; color: #333; font-weight: 500; cursor: pointer; font-size: 16px;">เข้าใช้งาน</button>
         </div>
 
         <!-- Main App Section -->
@@ -495,8 +492,7 @@
     </div>
 
     <script>
-        // ⚠️ ต้องแก้ไขอีก 1 อย่าง:
-        const GOOGLE_CLIENT_ID = '259066830160-gs126g7uj9oqo18fenhu9fjcr1auhl3d.apps.googleusercontent.com';
+        // ⚠️ ใส่ Google Apps Script Web App URL ตรงนี้:
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/d/13YR18bwG5TiOYxUz2W2y3LXjAoMyB2qK8XEANO0hEc31arzqeZOonHYV/userweb';
 
         const foodDatabase = [
@@ -528,18 +524,20 @@
         let selectedFood = null;
         let userEmail = null;
 
-        // Google Login Handler
-        function handleCredentialResponse(response) {
-            const base64Url = response.credential.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-
-            const userData = JSON.parse(jsonPayload);
-            userEmail = userData.email;
+        // Email Login Handler
+        function loginWithEmail() {
+            const email = document.getElementById('emailInput').value.trim();
+            if (!email) {
+                alert('กรุณาใส่อีเมล');
+                return;
+            }
+            if (!email.includes('@')) {
+                alert('กรุณาใส่อีเมลที่ถูกต้อง');
+                return;
+            }
             
-            document.getElementById('userName').textContent = userData.name;
+            userEmail = email;
+            document.getElementById('userName').textContent = email;
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('appSection').classList.remove('hidden');
             
@@ -552,10 +550,7 @@
             foods = [];
             document.getElementById('appSection').classList.add('hidden');
             document.getElementById('loginSection').classList.remove('hidden');
-            google.accounts.id.renderButton(
-                document.querySelector('.g_id_signin'),
-                { theme: 'outline', size: 'large' }
-            );
+            document.getElementById('emailInput').value = '';
         }
 
         function updateSyncStatus(message, isOk = true) {
