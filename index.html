@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 จดแคลประจำวัน</title>
-
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
     <style>
         * {
             margin: 0;
@@ -28,27 +29,6 @@
             padding: 2rem;
         }
         
-        .login-section {
-            text-align: center;
-            padding: 2rem;
-        }
-        
-        .login-section h1 {
-            font-size: 28px;
-            margin-bottom: 1rem;
-            color: #333;
-        }
-        
-        .login-section p {
-            color: #888;
-            margin-bottom: 2rem;
-        }
-        
-        #g_id_onload {
-            display: flex;
-            justify-content: center;
-        }
-        
         h1 {
             text-align: center;
             font-size: 28px;
@@ -63,43 +43,14 @@
             margin-bottom: 1rem;
         }
         
-        .user-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255,182,193,0.1);
-            padding: 0.75rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-size: 14px;
-        }
-        
-        .user-name {
-            color: #333;
-            font-weight: 500;
-        }
-        
-        .btn-logout {
-            background: rgba(255,100,100,0.2);
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            color: #c00;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .btn-logout:hover {
-            background: rgba(255,100,100,0.3);
-        }
-        
-        .header-gradient {
-            background: linear-gradient(135deg, rgba(255,182,193,0.3), rgba(176,224,230,0.3));
-            padding: 1.5rem;
-            border-radius: 16px;
-            margin-bottom: 1.5rem;
+        .login-section {
             text-align: center;
+            padding: 2rem;
+        }
+        
+        .login-section p {
+            color: #888;
+            margin-bottom: 2rem;
         }
         
         .card {
@@ -127,6 +78,7 @@
             color: #333;
             margin-bottom: 0.5rem;
             font-family: inherit;
+            box-sizing: border-box;
         }
         
         input[type="time"] {
@@ -134,7 +86,7 @@
         }
         
         button {
-            padding: 0.5rem 1rem;
+            padding: 0.75rem 1.5rem;
             background: rgba(200,200,200,0.2);
             border: none;
             border-radius: 6px;
@@ -147,17 +99,6 @@
         
         button:hover {
             background: rgba(200,200,200,0.3);
-        }
-        
-        .date-nav {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.5rem;
-            justify-content: center;
-        }
-        
-        .btn-today {
-            background: rgba(255,182,193,0.3);
         }
         
         .btn-primary {
@@ -227,6 +168,28 @@
             margin-bottom: 1.5rem;
         }
         
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,182,193,0.1);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 14px;
+        }
+        
+        .user-name {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .btn-logout {
+            background: rgba(255,100,100,0.2);
+            padding: 0.5rem 1rem;
+            color: #c00;
+        }
+        
         .food-item {
             padding: 0.75rem;
             background: rgba(230,230,250,0.3);
@@ -256,21 +219,6 @@
             max-height: 200px;
             overflow-y: auto;
             margin-bottom: 1rem;
-        }
-        
-        .upload-zone {
-            background: white;
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            border: 2px dashed rgba(176,224,230,0.5);
-            text-align: center;
-            cursor: pointer;
-        }
-        
-        .upload-text {
-            font-size: 14px;
-            color: #333;
         }
         
         .log-item {
@@ -309,10 +257,6 @@
             margin-left: 1rem;
         }
         
-        .btn-delete:hover {
-            background: rgba(255,200,200,0.4);
-        }
-        
         .empty-state {
             text-align: center;
             padding: 2rem 1rem;
@@ -320,70 +264,27 @@
             font-size: 14px;
         }
         
-        .stats-button {
-            width: 100%;
-            background: linear-gradient(135deg, rgba(176,224,230,0.3), rgba(200,200,255,0.3));
-            border: 1px solid rgba(176,224,230,0.5);
-            margin-bottom: 1.5rem;
-        }
-        
-        .stats-details {
-            margin-bottom: 1.5rem;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-        
-        .stats-box {
-            background: rgba(200,255,200,0.2);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-        
-        .stats-box.full {
-            grid-column: 1 / -1;
-        }
-        
-        .food-search {
-            margin-bottom: 1.5rem;
-        }
-        
-        .search-input {
-            background-color: rgba(176,224,230,0.15);
-        }
-        
-        .export-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #ddd;
-        }
-        
-        .btn-export {
-            background: rgba(200,255,200,0.2);
-            border: 1px solid rgba(200,255,200,0.4);
-        }
-        
-        .btn-export:hover {
-            background: rgba(200,255,200,0.3);
-        }
-        
         .hidden {
             display: none;
         }
-
-        .sync-status {
-            font-size: 12px;
-            color: #888;
+        
+        .header-gradient {
+            background: linear-gradient(135deg, rgba(255,182,193,0.3), rgba(176,224,230,0.3));
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
             text-align: center;
-            margin-top: 1rem;
         }
-
-        .sync-ok {
-            color: #28a745;
+        
+        .date-nav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+        
+        .btn-today {
+            background: rgba(255,182,193,0.3);
         }
     </style>
 </head>
@@ -436,28 +337,9 @@
             </div>
             <div class="progress-text" id="progressText">ยังขาด 120g โปรตีน</div>
 
-            <button class="stats-button" onclick="toggleStats()">📈 ดูสถิติรวม</button>
-            
-            <div id="statsPanel" class="hidden">
-                <div class="stats-details">
-                    <div class="stats-box">
-                        <div class="stat-value" id="totalDays">0</div>
-                        <div class="stat-label">วันที่บันทึก</div>
-                    </div>
-                    <div class="stats-box">
-                        <div class="stat-value" id="avgProtein">0</div>
-                        <div class="stat-label">โปรตีนเฉลี่ย</div>
-                    </div>
-                    <div class="stats-box full">
-                        <div class="stat-value" id="avgCalories">0</div>
-                        <div class="stat-label">แคลเฉลี่ยต่อวัน</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="food-search">
+            <div class="card">
                 <label>🍽️ ค้นหาอาหาร</label>
-                <input type="text" class="search-input" id="searchInput" placeholder="พิมพ์ชื่ออาหาร..." oninput="filterFoods()">
+                <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร..." oninput="filterFoods()" style="margin-bottom: 0;">
                 <div class="food-list" id="foodList"></div>
             </div>
 
@@ -469,32 +351,32 @@
                 <button class="btn-primary" onclick="addFoodToToday()">➕ เพิ่มอาหาร</button>
             </div>
 
-            <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                <div style="font-size: 24px; margin-bottom: 0.5rem;">📸</div>
-                <div class="upload-text">อัพโหลดภาพอาหาร</div>
-                <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload()" style="display: none;">
-            </div>
-
             <div id="foodLogPanel" class="hidden">
                 <div style="margin: 1rem 0 0.75rem; font-size: 16px; color: #333; font-weight: 500;">📋 อาหารที่กินไป</div>
                 <div id="foodLogList"></div>
             </div>
 
             <div id="emptyState" class="empty-state">ยังไม่มีอาหารในวันนี้ เริ่มต้นด้วยการค้นหาอาหาร 🍽️</div>
-
-            <div class="sync-status" id="syncStatus"></div>
-
-            <div class="export-section">
-                <button class="btn-export" onclick="exportData()">💾 ส่งออกข้อมูล</button>
-                <button class="btn-clear" onclick="clearAllData()">🗑️ ลบข้อมูลทั้งหมด</button>
-            </div>
         </div>
     </div>
 
     <script>
-        // ⚠️ ใส่ Google Apps Script Web App URL ตรงนี้:
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/d/13YR18bwG5TiOYxUz2W2y3LXjAoMyB2qK8XEANO0hEc31arzqeZOonHYV/userweb';
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCKYhceV4l27XoCnC2f2sml9U0HqZtwvgc",
+            authDomain: "calorie-tracker-4affc.firebaseapp.com",
+            projectId: "calorie-tracker-4affc",
+            storageBucket: "calorie-tracker-4affc.firebasestorage.app",
+            messagingSenderId: "286677782612",
+            appId: "1:286677782612:web:8676d1a46f5e0807911dc1",
+            measurementId: "G-SBHEZV6KHB"
+        };
 
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Food Database
         const foodDatabase = [
             { name: 'ไก่ต้มผิวไม่หนัง', cal: 165, protein: 31, unit: '100g' },
             { name: 'ไข่ไก่ต้ม', cal: 155, protein: 13, unit: 'ฟอง' },
@@ -516,7 +398,6 @@
             { name: 'ผักบุ้งลวก', cal: 20, protein: 2, unit: 'ชาม' },
             { name: 'ปลาแบ่งเค็ม', cal: 100, protein: 20, unit: '100g' },
             { name: 'ทูน่าแคน', cal: 132, protein: 29, unit: '100g' },
-            { name: 'นมสด', cal: 61, protein: 3.2, unit: '200ml' },
         ];
 
         let currentDate = new Date().toISOString().split('T')[0];
@@ -524,14 +405,10 @@
         let selectedFood = null;
         let userEmail = null;
 
-        // Email Login Handler
+        // Login
         function loginWithEmail() {
             const email = document.getElementById('emailInput').value.trim();
-            if (!email) {
-                alert('กรุณาใส่อีเมล');
-                return;
-            }
-            if (!email.includes('@')) {
+            if (!email || !email.includes('@')) {
                 alert('กรุณาใส่อีเมลที่ถูกต้อง');
                 return;
             }
@@ -553,61 +430,62 @@
             document.getElementById('emailInput').value = '';
         }
 
-        function updateSyncStatus(message, isOk = true) {
-            const status = document.getElementById('syncStatus');
-            status.textContent = message;
-            status.className = isOk ? 'sync-status sync-ok' : 'sync-status';
+        // Load data from Firebase
+        function loadUserData() {
+            const ref = database.ref(`users/${userEmail.replace(/\./g, '_')}/foods`);
+            ref.on('value', (snapshot) => {
+                const data = snapshot.val();
+                foods = data ? Object.values(data) : [];
+                updateDisplay();
+            });
         }
 
-        // Load user data from Google Sheets
-        async function loadUserData() {
-            try {
-                const response = await fetch(`${GOOGLE_SCRIPT_URL}?userId=${userEmail}`);
-                const data = await response.json();
-                
-                foods = data.map(row => ({
-                    userId: row[0],
-                    date: row[1],
-                    foodName: row[2],
-                    totalCal: parseInt(row[3]) || 0,
-                    totalProtein: parseFloat(row[4]) || 0,
-                    time: row[5],
-                    quantity: parseFloat(row[6]) || 1,
-                    id: Math.random()
-                }));
-                
-                updateSyncStatus('✅ ดึงข้อมูลสำเร็จ', true);
-            } catch (error) {
-                updateSyncStatus('⚠️ ไม่สามารถเชื่อมต่อ Google Sheets', false);
-                console.error('Error loading data:', error);
+        // Save food to Firebase
+        function saveFoodToFirebase(food) {
+            const userId = userEmail.replace(/\./g, '_');
+            const ref = database.ref(`users/${userId}/foods/${food.id}`);
+            ref.set(food);
+        }
+
+        // Update display
+        function updateDisplay() {
+            let todayFoods = foods.filter(f => f.date === currentDate);
+            todayFoods.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
+            
+            const totalCal = todayFoods.reduce((sum, f) => sum + f.totalCal, 0);
+            const totalProtein = todayFoods.reduce((sum, f) => sum + f.totalProtein, 0);
+            const goal = parseInt(document.getElementById('proteinGoal').value);
+            const percent = Math.min(100, Math.round((totalProtein / goal) * 100));
+
+            document.getElementById('totalCal').textContent = totalCal;
+            document.getElementById('totalProtein').textContent = totalProtein;
+            document.getElementById('proteinGoalDisplay').textContent = goal;
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressText').textContent = 
+                totalProtein >= goal ? '✅ ครบเป้าหมาย!' : `ยังขาด ${Math.max(0, goal - totalProtein).toFixed(1)}g โปรตีน`;
+
+            // Update food log
+            const logList = document.getElementById('foodLogList');
+            const logPanel = document.getElementById('foodLogPanel');
+            const emptyState = document.getElementById('emptyState');
+
+            if (todayFoods.length > 0) {
+                logPanel.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                logList.innerHTML = todayFoods.map(f => `
+                    <div class="log-item">
+                        <div>
+                            <div class="log-name">${f.foodName}</div>
+                            <div class="log-qty">${f.quantity}${f.unit} <span style="color: #ff69b4; font-weight: 500;">🕐 ${f.time}</span></div>
+                            <div class="log-nutrition">${f.totalCal} cal | ${f.totalProtein}g protein</div>
+                        </div>
+                        <button class="btn-delete" onclick="removeFood('${f.id}')">ลบ</button>
+                    </div>
+                `).join('');
+            } else {
+                logPanel.classList.add('hidden');
+                emptyState.classList.remove('hidden');
             }
-        }
-
-        // Save food to Google Sheets
-        async function saveFoodToSheet(food) {
-            try {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        userId: userEmail,
-                        date: food.date,
-                        foodName: food.foodName,
-                        calories: food.totalCal,
-                        protein: food.totalProtein,
-                        time: food.time,
-                        quantity: food.quantity
-                    })
-                });
-                updateSyncStatus('✅ บันทึกข้อมูลสำเร็จ', true);
-            } catch (error) {
-                updateSyncStatus('⚠️ ไม่สามารถบันทึกข้อมูล', false);
-                console.error('Error saving data:', error);
-            }
-        }
-
-        function init() {
-            updateDisplay();
-            updateDate();
         }
 
         function updateDate() {
@@ -669,19 +547,17 @@
             const qty = parseFloat(document.getElementById('servingSize').value);
             const mealTime = document.getElementById('mealTime').value || new Date().toTimeString().slice(0, 5);
             const food = {
-                userId: userEmail,
-                date: currentDate,
+                id: Date.now().toString(),
                 foodName: selectedFood.name,
+                unit: selectedFood.unit,
                 quantity: qty,
                 totalCal: Math.round(selectedFood.cal * qty),
                 totalProtein: Math.round(selectedFood.protein * qty * 10) / 10,
                 time: mealTime,
-                id: Date.now()
+                date: currentDate
             };
 
-            foods.push(food);
-            saveFoodToSheet(food);
-            updateDisplay();
+            saveFoodToFirebase(food);
             document.getElementById('searchInput').value = '';
             document.getElementById('mealTime').value = '';
             document.getElementById('servingSizePanel').classList.add('hidden');
@@ -689,137 +565,18 @@
         }
 
         function removeFood(id) {
-            foods = foods.filter(f => f.id !== id);
-            updateDisplay();
-        }
-
-        async function handleImageUpload() {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const base64 = e.target.result.split(',')[1];
-                try {
-                    const res = await fetch('https://api.anthropic.com/v1/messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'claude-sonnet-4-6',
-                            max_tokens: 500,
-                            messages: [{
-                                role: 'user',
-                                content: [
-                                    { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
-                                    { type: 'text', text: 'บอกเฉพาะชื่ออาหารในภาพเป็นภาษาไทย 1 บรรทัด' }
-                                ]
-                            }]
-                        })
-                    });
-
-                    const data = await res.json();
-                    const foodName = data.content?.[0]?.text || '';
-                    const matched = foodDatabase.find(f => f.name.toLowerCase().includes(foodName.toLowerCase()));
-                    
-                    if (matched) {
-                        selectedFood = matched;
-                        document.getElementById('searchInput').value = matched.name;
-                        document.getElementById('servingSize').value = 1;
-                        document.getElementById('servingSizePanel').classList.remove('hidden');
-                    } else {
-                        alert(`ไม่พบ "${foodName}" ในฐานข้อมูล`);
-                    }
-                } catch (error) {
-                    alert('เกิดข้อผิดพลาด: ' + error.message);
-                }
-            };
-            reader.readAsDataURL(file);
+            const userId = userEmail.replace(/\./g, '_');
+            const ref = database.ref(`users/${userId}/foods/${id}`);
+            ref.remove();
         }
 
         function saveProteinGoal() {
             updateDisplay();
         }
 
-        function updateDisplay() {
-            let todayFoods = foods.filter(f => f.date === currentDate);
-            todayFoods.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
-            const totalCal = todayFoods.reduce((sum, f) => sum + f.totalCal, 0);
-            const totalProtein = todayFoods.reduce((sum, f) => sum + f.totalProtein, 0);
-            const goal = parseInt(document.getElementById('proteinGoal').value);
-            const percent = Math.min(100, Math.round((totalProtein / goal) * 100));
-
-            document.getElementById('totalCal').textContent = totalCal;
-            document.getElementById('totalProtein').textContent = totalProtein;
-            document.getElementById('proteinGoalDisplay').textContent = goal;
-            document.getElementById('progressBar').style.width = percent + '%';
-            document.getElementById('progressText').textContent = 
-                totalProtein >= goal ? '✅ ครบเป้าหมาย!' : `ยังขาด ${Math.max(0, goal - totalProtein).toFixed(1)}g โปรตีน`;
-
-            const logList = document.getElementById('foodLogList');
-            const logPanel = document.getElementById('foodLogPanel');
-            const emptyState = document.getElementById('emptyState');
-
-            if (todayFoods.length > 0) {
-                logPanel.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-                logList.innerHTML = todayFoods.map(f => `
-                    <div class="log-item">
-                        <div>
-                            <div class="log-name">${f.foodName}</div>
-                            <div class="log-qty">${f.quantity}${foodDatabase.find(x => x.name === f.foodName)?.unit || ''} <span style="color: #ff69b4; font-weight: 500;">🕐 ${f.time}</span></div>
-                            <div class="log-nutrition">${f.totalCal} cal | ${f.totalProtein}g protein</div>
-                        </div>
-                        <button class="btn-delete" onclick="removeFood(${f.id})">ลบ</button>
-                    </div>
-                `).join('');
-            } else {
-                logPanel.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            }
-
-            updateStats();
-        }
-
-        function toggleStats() {
-            document.getElementById('statsPanel').classList.toggle('hidden');
-        }
-
-        function updateStats() {
-            if (foods.length === 0) return;
-
-            const dates = [...new Set(foods.map(f => f.date))];
-            const dailyStats = {};
-            
-            foods.forEach(f => {
-                if (!dailyStats[f.date]) dailyStats[f.date] = { cal: 0, protein: 0 };
-                dailyStats[f.date].cal += f.totalCal;
-                dailyStats[f.date].protein += f.totalProtein;
-            });
-
-            const totalCal = Object.values(dailyStats).reduce((sum, d) => sum + d.cal, 0);
-            const totalProtein = Object.values(dailyStats).reduce((sum, d) => sum + d.protein, 0);
-
-            document.getElementById('totalDays').textContent = dates.length;
-            document.getElementById('avgProtein').textContent = (Math.round((totalProtein / dates.length) * 10) / 10) + 'g';
-            document.getElementById('avgCalories').textContent = Math.round(totalCal / dates.length) + ' cal';
-        }
-
-        function exportData() {
-            const blob = new Blob([JSON.stringify(foods, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `calorie-tracker-${currentDate}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function clearAllData() {
-            if (confirm('แน่ใจหรือ? การลบข้อมูลไม่สามารถกู้คืนได้')) {
-                foods = [];
-                updateDisplay();
-                updateStats();
-            }
+        function init() {
+            updateDate();
+            updateDisplay();
         }
     </script>
 </body>
