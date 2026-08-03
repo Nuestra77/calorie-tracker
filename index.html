@@ -5,41 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>📊 จดแคลประจำวัน</title>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #fce4ec 0%, #e0f2f1 100%);
-            min-height: 100vh; padding: 1rem;
-        }
-        .container {
-            max-width: 600px; margin: 0 auto; background: white;
-            border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); padding: 2rem;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background: linear-gradient(135deg, #fce4ec 0%, #e0f2f1 100%); min-height: 100vh; padding: 1rem; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); padding: 2rem; }
         h1 { text-align: center; font-size: 28px; margin-bottom: 0.5rem; color: #333; }
         .subtitle { text-align: center; font-size: 14px; color: #888; margin-bottom: 1rem; }
-        .login-section { text-align: center; padding: 2rem; }
-        .login-section p { color: #888; margin-bottom: 2rem; }
-        .card {
-            background: #f8f9fa; padding: 1rem; border-radius: 12px;
-            margin-bottom: 1.5rem; border: 1px solid rgba(255,182,193,0.5);
-        }
+        .login-section { text-align: center; padding: 2rem 1rem; }
+        .login-section p { color: #888; margin-bottom: 1.5rem; }
+        .card { background: #f8f9fa; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(255,182,193,0.5); }
         label { display: block; font-size: 14px; margin-bottom: 0.5rem; color: #333; font-weight: 500; }
-        input, select {
-            width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;
-            font-size: 14px; color: #333; margin-bottom: 0.5rem; font-family: inherit; box-sizing: border-box;
-        }
+        input, select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; color: #333; margin-bottom: 0.5rem; font-family: inherit; box-sizing: border-box; }
         input[type="time"] { background-color: rgba(176,224,230,0.1); }
-        button {
-            padding: 0.75rem 1.5rem; background: rgba(200,200,200,0.2); border: none;
-            border-radius: 6px; cursor: pointer; color: #333; font-size: 12px;
-            font-weight: 500; transition: background 0.2s;
-        }
+        button { padding: 0.75rem 1.5rem; background: rgba(200,200,200,0.2); border: none; border-radius: 6px; cursor: pointer; color: #333; font-size: 12px; font-weight: 500; transition: background 0.2s; }
         button:hover { background: rgba(200,200,200,0.3); }
-        .btn-primary {
-            width: 100%; background: linear-gradient(135deg, rgba(255,192,203,0.6), rgba(255,182,193,0.6)); margin-top: 0.5rem;
-        }
+        .btn-primary { width: 100%; background: linear-gradient(135deg, rgba(255,192,203,0.6), rgba(255,182,193,0.6)); margin-top: 0.5rem; }
         .btn-primary:hover { background: linear-gradient(135deg, rgba(255,192,203,0.7), rgba(255,182,193,0.7)); }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
         .stat-card { padding: 1rem; border-radius: 12px; text-align: center; border: 1px solid rgba(0,0,0,0.1); }
@@ -71,110 +54,168 @@
         .date-nav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; justify-content: center; }
         .btn-today { background: rgba(255,182,193,0.3); }
         .goal-tabs { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
-        .goal-tab { flex: 1; padding: 0.6rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 13px; }
+        .goal-tab { flex: 1; padding: 0.6rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 13px; cursor: pointer; }
         .goal-tab.active { background: linear-gradient(135deg, rgba(255,192,203,0.6), rgba(255,182,193,0.6)); font-weight: 600; }
-        .tab-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
-        .tab-btn { flex: 1; padding: 0.6rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 13px; cursor: pointer; }
-        .tab-btn.active { background: rgba(176,224,230,0.4); font-weight: 600; }
         .custom-link { text-align: center; margin-top: 0.5rem; }
         .custom-link a { color: #b088c9; font-size: 13px; cursor: pointer; text-decoration: underline; }
+        .auth-toggle { text-align: center; margin-top: 1rem; font-size: 13px; color: #888; }
+        .auth-toggle a { color: #b088c9; cursor: pointer; text-decoration: underline; }
+        .auth-error { color: #c00; font-size: 13px; margin-bottom: 0.75rem; min-height: 18px; }
+        .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .view-tab { flex: 1; padding: 0.7rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 14px; cursor: pointer; font-weight: 500; }
+        .view-tab.active { background: linear-gradient(135deg, rgba(176,224,230,0.5), rgba(200,200,255,0.4)); }
+        .chart-box { background: #fafafa; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(200,200,200,0.2); }
+        .chart-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 0.75rem; }
+        .range-btns { display: flex; gap: 0.5rem; margin-bottom: 1rem; justify-content: center; }
+        .range-btn { padding: 0.4rem 0.9rem; border-radius: 6px; background: #f0f0f0; font-size: 12px; cursor: pointer; }
+        .range-btn.active { background: rgba(255,182,193,0.4); font-weight: 600; }
+        .summary-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1.5rem; }
+        .summary-box { background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; }
+        .summary-val { font-size: 20px; font-weight: 600; color: #333; }
+        .summary-lbl { font-size: 11px; color: #888; margin-top: 3px; }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- LOGIN / SIGNUP -->
         <div id="loginSection" class="login-section">
             <h1>📊 จดแคลประจำวัน</h1>
-            <p>ใส่อีเมลเพื่อเริ่มจดแคล</p>
-            <input type="email" id="emailInput" placeholder="example@gmail.com">
-            <button onclick="loginWithEmail()" class="btn-primary" style="padding:12px;font-size:16px;">เข้าใช้งาน</button>
+            <p id="authSubtitle">เข้าสู่ระบบเพื่อเริ่มจดแคล</p>
+            <div class="auth-error" id="authError"></div>
+            <input type="email" id="emailInput" placeholder="อีเมล">
+            <input type="password" id="passwordInput" placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)">
+            <button onclick="submitAuth()" class="btn-primary" id="authBtn" style="padding:12px;font-size:16px;">เข้าสู่ระบบ</button>
+            <div class="auth-toggle">
+                <span id="toggleText">ยังไม่มีบัญชี? </span><a onclick="toggleAuthMode()" id="toggleLink">สมัครสมาชิก</a>
+            </div>
         </div>
 
+        <!-- MAIN APP -->
         <div id="appSection" class="hidden">
             <div class="user-info">
                 <span class="user-name">👤 <span id="userName"></span></span>
                 <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
             </div>
 
-            <div class="header-gradient">
-                <h1>📊 จดแคลประจำวัน</h1>
-                <div class="subtitle">วันนี้: <span id="currentDate"></span></div>
+            <div class="view-tabs">
+                <div class="view-tab active" id="tab-today" onclick="switchView('today')">📝 วันนี้</div>
+                <div class="view-tab" id="tab-stats" onclick="switchView('stats')">📈 สถิติ</div>
             </div>
 
-            <div class="date-nav">
-                <button onclick="changeDate(-1)">← วันก่อน</button>
-                <button class="btn-today" onclick="goToday()">วันนี้</button>
-                <button onclick="changeDate(1)">วันต่อไป →</button>
-            </div>
-
-            <div class="card">
-                <label>🎯 เป้าหมาย</label>
-                <div class="goal-tabs">
-                    <div class="goal-tab" id="goal-lose" onclick="setGoal('lose')">ลดน้ำหนัก</div>
-                    <div class="goal-tab active" id="goal-maintain" onclick="setGoal('maintain')">คงน้ำหนัก</div>
-                    <div class="goal-tab" id="goal-gain" onclick="setGoal('gain')">เพิ่มกล้าม</div>
+            <!-- ===== TODAY VIEW ===== -->
+            <div id="todayView">
+                <div class="header-gradient">
+                    <h1>📊 จดแคลประจำวัน</h1>
+                    <div class="subtitle">วันนี้: <span id="currentDate"></span></div>
                 </div>
-                <label style="margin-top:0.75rem;">แคลเป้าหมาย/วัน</label>
-                <input type="number" id="calGoal" value="2000" onchange="saveSettings()">
-                <label>โปรตีนเป้าหมาย/วัน (g)</label>
-                <input type="number" id="proteinGoal" value="120" onchange="saveSettings()">
-            </div>
 
-            <div class="stats-grid">
-                <div class="stat-card calorie">
-                    <div class="stat-value" id="totalCal">0</div>
-                    <div class="stat-label">/ <span id="calGoalDisplay">2000</span> แคล</div>
+                <div class="date-nav">
+                    <button onclick="changeDate(-1)">← วันก่อน</button>
+                    <button class="btn-today" onclick="goToday()">วันนี้</button>
+                    <button onclick="changeDate(1)">วันต่อไป →</button>
                 </div>
-                <div class="stat-card protein">
-                    <div class="stat-value" id="totalProtein">0</div>
-                    <div class="stat-label">/ <span id="proteinGoalDisplay">120</span> g โปรตีน</div>
+
+                <div class="card">
+                    <label>🎯 เป้าหมาย</label>
+                    <div class="goal-tabs">
+                        <div class="goal-tab" id="goal-lose" onclick="setGoal('lose')">ลดน้ำหนัก</div>
+                        <div class="goal-tab active" id="goal-maintain" onclick="setGoal('maintain')">คงน้ำหนัก</div>
+                        <div class="goal-tab" id="goal-gain" onclick="setGoal('gain')">เพิ่มกล้าม</div>
+                    </div>
+                    <label style="margin-top:0.75rem;">แคลเป้าหมาย/วัน</label>
+                    <input type="number" id="calGoal" value="2000" onchange="saveSettings()">
+                    <label>โปรตีนเป้าหมาย/วัน (g)</label>
+                    <input type="number" id="proteinGoal" value="120" onchange="saveSettings()">
                 </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card calorie">
+                        <div class="stat-value" id="totalCal">0</div>
+                        <div class="stat-label">/ <span id="calGoalDisplay">2000</span> แคล</div>
+                    </div>
+                    <div class="stat-card protein">
+                        <div class="stat-value" id="totalProtein">0</div>
+                        <div class="stat-label">/ <span id="proteinGoalDisplay">120</span> g โปรตีน</div>
+                    </div>
+                </div>
+
+                <div class="progress-bar cal"><div class="progress-fill" id="calBar" style="width:0%"></div></div>
+                <div class="progress-text" id="calText">เหลือ 2000 แคล</div>
+                <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
+                <div class="progress-text" id="progressText">ยังขาด 120g โปรตีน</div>
+
+                <div class="card">
+                    <label>🍽️ ค้นหาอาหาร</label>
+                    <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0;">
+                    <div class="food-list" id="foodList"></div>
+                    <div class="custom-link"><a onclick="showCustomFood()">+ เพิ่มอาหารที่ไม่มีในลิสต์เอง</a></div>
+                </div>
+
+                <div id="servingSizePanel" class="hidden card">
+                    <div class="log-name" id="selectedFoodName" style="margin-bottom:0.75rem;"></div>
+                    <label>📐 หน่วย</label>
+                    <select id="unitSelect" onchange="updatePreview()"></select>
+                    <label>📏 จำนวน</label>
+                    <input type="number" id="servingSize" value="1" min="0.5" step="0.5" oninput="updatePreview()">
+                    <label>🕐 เวลากินอาหาร</label>
+                    <input type="time" id="mealTime">
+                    <div class="food-info" id="previewInfo" style="margin:0.5rem 0;"></div>
+                    <button class="btn-primary" onclick="addFoodToToday()">➕ เพิ่มอาหาร</button>
+                </div>
+
+                <div id="customFoodPanel" class="hidden card">
+                    <div class="log-name" style="margin-bottom:0.75rem;">✏️ เพิ่มอาหารเอง</div>
+                    <label>ชื่ออาหาร</label>
+                    <input type="text" id="customName" placeholder="เช่น ก๋วยจั๊บญวน">
+                    <label>หน่วย</label>
+                    <input type="text" id="customUnit" placeholder="เช่น ชาม, จาน, ชิ้น">
+                    <label>แคลโลรี่ (ต่อ 1 หน่วย)</label>
+                    <input type="number" id="customCal" placeholder="เช่น 350">
+                    <label>โปรตีน g (ต่อ 1 หน่วย)</label>
+                    <input type="number" id="customProtein" placeholder="เช่น 15">
+                    <label>🕐 เวลากินอาหาร</label>
+                    <input type="time" id="customTime">
+                    <button class="btn-primary" onclick="addCustomFood()">➕ เพิ่มอาหาร</button>
+                </div>
+
+                <div id="foodLogPanel" class="hidden">
+                    <div style="margin:1rem 0 0.75rem; font-size:16px; color:#333; font-weight:500;">📋 อาหารที่กินไป</div>
+                    <div id="foodLogList"></div>
+                </div>
+
+                <div id="emptyState" class="empty-state">ยังไม่มีอาหารในวันนี้ เริ่มต้นด้วยการค้นหาอาหาร 🍽️</div>
             </div>
 
-            <div class="progress-bar cal"><div class="progress-fill" id="calBar" style="width:0%"></div></div>
-            <div class="progress-text" id="calText">เหลือ 2000 แคล</div>
-            <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
-            <div class="progress-text" id="progressText">ยังขาด 120g โปรตีน</div>
+            <!-- ===== STATS VIEW ===== -->
+            <div id="statsView" class="hidden">
+                <div class="header-gradient">
+                    <h1>📈 สถิติย้อนหลัง</h1>
+                    <div class="subtitle" id="statsRangeLabel">7 วันล่าสุด</div>
+                </div>
 
-            <div class="card">
-                <label>🍽️ ค้นหาอาหาร</label>
-                <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0;">
-                <div class="food-list" id="foodList"></div>
-                <div class="custom-link"><a onclick="showCustomFood()">+ เพิ่มอาหารที่ไม่มีในลิสต์เอง</a></div>
+                <div class="range-btns">
+                    <div class="range-btn active" id="range-7" onclick="setRange(7)">7 วัน</div>
+                    <div class="range-btn" id="range-14" onclick="setRange(14)">14 วัน</div>
+                    <div class="range-btn" id="range-30" onclick="setRange(30)">30 วัน</div>
+                </div>
+
+                <div class="summary-row">
+                    <div class="summary-box"><div class="summary-val" id="avgCal">0</div><div class="summary-lbl">แคลเฉลี่ย/วัน</div></div>
+                    <div class="summary-box"><div class="summary-val" id="avgProtein">0</div><div class="summary-lbl">โปรตีนเฉลี่ย/วัน</div></div>
+                    <div class="summary-box"><div class="summary-val" id="daysOnTarget">0</div><div class="summary-lbl">วันถึงเป้าโปรตีน</div></div>
+                </div>
+
+                <div class="chart-box">
+                    <div class="chart-title">🔥 แคลโลรี่รายวัน</div>
+                    <canvas id="calChart" height="200"></canvas>
+                </div>
+                <div class="chart-box">
+                    <div class="chart-title">💪 โปรตีนรายวัน (g)</div>
+                    <canvas id="proteinChart" height="200"></canvas>
+                </div>
+
+                <div id="statsEmpty" class="empty-state hidden">ยังไม่มีข้อมูลพอ เริ่มจดแคลสัก 2-3 วันแล้วกลับมาดูนะ 📊</div>
             </div>
-
-            <div id="servingSizePanel" class="hidden card">
-                <div class="log-name" id="selectedFoodName" style="margin-bottom:0.75rem;"></div>
-                <label>📐 หน่วย</label>
-                <select id="unitSelect" onchange="updatePreview()"></select>
-                <label>📏 จำนวน</label>
-                <input type="number" id="servingSize" value="1" min="0.5" step="0.5" oninput="updatePreview()">
-                <label>🕐 เวลากินอาหาร</label>
-                <input type="time" id="mealTime">
-                <div class="food-info" id="previewInfo" style="margin:0.5rem 0;"></div>
-                <button class="btn-primary" onclick="addFoodToToday()">➕ เพิ่มอาหาร</button>
-            </div>
-
-            <div id="customFoodPanel" class="hidden card">
-                <div class="log-name" style="margin-bottom:0.75rem;">✏️ เพิ่มอาหารเอง</div>
-                <label>ชื่ออาหาร</label>
-                <input type="text" id="customName" placeholder="เช่น ก๋วยจั๊บญวน">
-                <label>หน่วย</label>
-                <input type="text" id="customUnit" placeholder="เช่น ชาม, จาน, ชิ้น">
-                <label>แคลโลรี่ (ต่อ 1 หน่วย)</label>
-                <input type="number" id="customCal" placeholder="เช่น 350">
-                <label>โปรตีน g (ต่อ 1 หน่วย)</label>
-                <input type="number" id="customProtein" placeholder="เช่น 15">
-                <label>🕐 เวลากินอาหาร</label>
-                <input type="time" id="customTime">
-                <button class="btn-primary" onclick="addCustomFood()">➕ เพิ่มอาหาร</button>
-            </div>
-
-            <div id="foodLogPanel" class="hidden">
-                <div style="margin:1rem 0 0.75rem; font-size:16px; color:#333; font-weight:500;">📋 อาหารที่กินไป</div>
-                <div id="foodLogList"></div>
-            </div>
-
-            <div id="emptyState" class="empty-state">ยังไม่มีอาหารในวันนี้ เริ่มต้นด้วยการค้นหาอาหาร 🍽️</div>
         </div>
     </div>
 
@@ -190,6 +231,7 @@
             databaseURL: "https://calorie-tracker-4affc-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
         const database = firebase.database();
 
         const foodDatabase = [
@@ -325,69 +367,104 @@
         let currentDate = new Date().toISOString().split('T')[0];
         let foods = [];
         let selectedFood = null;
-        let userEmail = null;
+        let currentUid = null;
         let currentGoal = 'maintain';
+        let authMode = 'login';
+        let statsRange = 7;
+        let calChartObj = null, proteinChartObj = null;
 
-        function loginWithEmail() {
+        // ===== AUTH =====
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'signup' : 'login';
+            document.getElementById('authError').textContent = '';
+            if (authMode === 'signup') {
+                document.getElementById('authSubtitle').textContent = 'สร้างบัญชีใหม่';
+                document.getElementById('authBtn').textContent = 'สมัครสมาชิก';
+                document.getElementById('toggleText').textContent = 'มีบัญชีอยู่แล้ว? ';
+                document.getElementById('toggleLink').textContent = 'เข้าสู่ระบบ';
+            } else {
+                document.getElementById('authSubtitle').textContent = 'เข้าสู่ระบบเพื่อเริ่มจดแคล';
+                document.getElementById('authBtn').textContent = 'เข้าสู่ระบบ';
+                document.getElementById('toggleText').textContent = 'ยังไม่มีบัญชี? ';
+                document.getElementById('toggleLink').textContent = 'สมัครสมาชิก';
+            }
+        }
+
+        function submitAuth() {
             const email = document.getElementById('emailInput').value.trim();
-            if (!email || !email.includes('@')) { alert('กรุณาใส่อีเมลที่ถูกต้อง'); return; }
-            userEmail = email;
-            document.getElementById('userName').textContent = email;
-            document.getElementById('loginSection').classList.add('hidden');
-            document.getElementById('appSection').classList.remove('hidden');
-            loadSettings();
-            loadUserData();
-            init();
-        }
-
-        function logout() {
-            userEmail = null; foods = [];
-            document.getElementById('appSection').classList.add('hidden');
-            document.getElementById('loginSection').classList.remove('hidden');
-            document.getElementById('emailInput').value = '';
-        }
-
-        function uid() { return userEmail.replace(/[.#$/\[\]]/g, '_'); }
-
-        function loadUserData() {
-            const ref = database.ref('users/' + uid() + '/foods');
-            ref.on('value', (snapshot) => {
-                const data = snapshot.val();
-                foods = data ? Object.values(data) : [];
-                updateDisplay();
+            const password = document.getElementById('passwordInput').value;
+            const errEl = document.getElementById('authError');
+            errEl.textContent = '';
+            if (!email || !password) { errEl.textContent = 'กรุณากรอกอีเมลและรหัสผ่าน'; return; }
+            const action = authMode === 'signup'
+                ? auth.createUserWithEmailAndPassword(email, password)
+                : auth.signInWithEmailAndPassword(email, password);
+            action.catch((error) => {
+                const map = {
+                    'auth/invalid-email': 'อีเมลไม่ถูกต้อง',
+                    'auth/user-not-found': 'ไม่พบบัญชีนี้ ลองสมัครสมาชิก',
+                    'auth/wrong-password': 'รหัสผ่านไม่ถูกต้อง',
+                    'auth/invalid-credential': 'อีเมลหรือรหัสผ่านไม่ถูกต้อง',
+                    'auth/email-already-in-use': 'อีเมลนี้มีบัญชีแล้ว ลองเข้าสู่ระบบ',
+                    'auth/weak-password': 'รหัสผ่านสั้นไป (อย่างน้อย 6 ตัว)'
+                };
+                errEl.textContent = map[error.code] || error.message;
             });
         }
 
-        function saveFoodToFirebase(food) {
-            database.ref('users/' + uid() + '/foods/' + food.id).set(food);
-        }
+        function logout() { auth.signOut(); }
 
+        // ตรวจสถานะ login อัตโนมัติ
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUid = user.uid;
+                document.getElementById('userName').textContent = user.email;
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('appSection').classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+                loadSettings();
+                loadUserData();
+                init();
+            } else {
+                currentUid = null; foods = [];
+                document.getElementById('appSection').classList.add('hidden');
+                document.getElementById('loginSection').classList.remove('hidden');
+            }
+        });
+
+        // ===== DATA =====
+        function loadUserData() {
+            database.ref('users/' + currentUid + '/foods').on('value', (snapshot) => {
+                const data = snapshot.val();
+                foods = data ? Object.values(data) : [];
+                updateDisplay();
+                if (!document.getElementById('statsView').classList.contains('hidden')) renderStats();
+            });
+        }
+        function saveFoodToFirebase(food) { database.ref('users/' + currentUid + '/foods/' + food.id).set(food); }
+        function removeFood(id) { database.ref('users/' + currentUid + '/foods/' + id).remove(); }
+
+        // ===== SETTINGS =====
         function setGoal(goal) {
             currentGoal = goal;
             document.querySelectorAll('.goal-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('goal-' + goal).classList.add('active');
-            // แนะนำค่า default ตามเป้าหมาย
-            const calInput = document.getElementById('calGoal');
-            const proteinInput = document.getElementById('proteinGoal');
+            const calInput = document.getElementById('calGoal'), proteinInput = document.getElementById('proteinGoal');
             if (goal === 'lose') { calInput.value = 1500; proteinInput.value = 130; }
             else if (goal === 'gain') { calInput.value = 2500; proteinInput.value = 160; }
             else { calInput.value = 2000; proteinInput.value = 120; }
             saveSettings();
-            updateDisplay();
         }
-
         function saveSettings() {
-            const settings = {
+            database.ref('users/' + currentUid + '/settings').set({
                 goal: currentGoal,
                 calGoal: document.getElementById('calGoal').value,
                 proteinGoal: document.getElementById('proteinGoal').value
-            };
-            database.ref('users/' + uid() + '/settings').set(settings);
+            });
             updateDisplay();
         }
-
         function loadSettings() {
-            database.ref('users/' + uid() + '/settings').once('value', (snap) => {
+            database.ref('users/' + currentUid + '/settings').once('value', (snap) => {
                 const s = snap.val();
                 if (s) {
                     currentGoal = s.goal || 'maintain';
@@ -400,6 +477,16 @@
             });
         }
 
+        // ===== VIEW SWITCHING =====
+        function switchView(view) {
+            document.getElementById('tab-today').classList.toggle('active', view === 'today');
+            document.getElementById('tab-stats').classList.toggle('active', view === 'stats');
+            document.getElementById('todayView').classList.toggle('hidden', view !== 'today');
+            document.getElementById('statsView').classList.toggle('hidden', view !== 'stats');
+            if (view === 'stats') renderStats();
+        }
+
+        // ===== TODAY DISPLAY =====
         function updateDisplay() {
             let todayFoods = foods.filter(f => f.date === currentDate);
             todayFoods.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
@@ -407,25 +494,20 @@
             const totalProtein = Math.round(todayFoods.reduce((s, f) => s + f.totalProtein, 0) * 10) / 10;
             const calGoal = parseInt(document.getElementById('calGoal').value);
             const goal = parseInt(document.getElementById('proteinGoal').value);
-            const calPercent = Math.min(100, Math.round((totalCal / calGoal) * 100));
-            const percent = Math.min(100, Math.round((totalProtein / goal) * 100));
-
             document.getElementById('totalCal').textContent = totalCal;
             document.getElementById('totalProtein').textContent = totalProtein;
             document.getElementById('calGoalDisplay').textContent = calGoal;
             document.getElementById('proteinGoalDisplay').textContent = goal;
-            document.getElementById('calBar').style.width = calPercent + '%';
-            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('calBar').style.width = Math.min(100, Math.round((totalCal/calGoal)*100)) + '%';
+            document.getElementById('progressBar').style.width = Math.min(100, Math.round((totalProtein/goal)*100)) + '%';
             const calLeft = calGoal - totalCal;
             document.getElementById('calText').textContent = calLeft >= 0 ? ('เหลือ ' + calLeft + ' แคล') : ('เกิน ' + Math.abs(calLeft) + ' แคล ⚠️');
-            document.getElementById('progressText').textContent = totalProtein >= goal ? '✅ ครบเป้าหมายโปรตีน!' : ('ยังขาด ' + (Math.round((goal - totalProtein)*10)/10) + 'g โปรตีน');
-
+            document.getElementById('progressText').textContent = totalProtein >= goal ? '✅ ครบเป้าหมายโปรตีน!' : ('ยังขาด ' + (Math.round((goal-totalProtein)*10)/10) + 'g โปรตีน');
             const logList = document.getElementById('foodLogList');
             const logPanel = document.getElementById('foodLogPanel');
             const emptyState = document.getElementById('emptyState');
             if (todayFoods.length > 0) {
-                logPanel.classList.remove('hidden');
-                emptyState.classList.add('hidden');
+                logPanel.classList.remove('hidden'); emptyState.classList.add('hidden');
                 logList.innerHTML = todayFoods.map(f =>
                     '<div class="log-item"><div>' +
                     '<div class="log-name">' + f.foodName + '</div>' +
@@ -433,10 +515,7 @@
                     '<div class="log-nutrition">' + f.totalCal + ' cal | ' + f.totalProtein + 'g protein</div>' +
                     '</div><button class="btn-delete" onclick="removeFood(\'' + f.id + '\')">ลบ</button></div>'
                 ).join('');
-            } else {
-                logPanel.classList.add('hidden');
-                emptyState.classList.remove('hidden');
-            }
+            } else { logPanel.classList.add('hidden'); emptyState.classList.remove('hidden'); }
         }
 
         function updateDate() {
@@ -451,6 +530,7 @@
         }
         function goToday() { currentDate = new Date().toISOString().split('T')[0]; updateDate(); updateDisplay(); }
 
+        // ===== SEARCH & ADD =====
         function filterFoods() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const list = document.getElementById('foodList');
@@ -466,12 +546,10 @@
             }).join('');
             if (filtered.length === 0) list.innerHTML = '<div class="food-info" style="padding:0.5rem;">ไม่พบอาหารนี้ ลองเพิ่มเองด้านล่าง</div>';
         }
-
         function selectFood(name) {
             selectedFood = foodDatabase.find(f => f.name === name);
             document.getElementById('selectedFoodName').textContent = '🍽️ ' + name;
-            const unitSelect = document.getElementById('unitSelect');
-            unitSelect.innerHTML = selectedFood.units.map((u, i) => '<option value="' + i + '">' + u.u + ' (' + u.cal + ' cal, ' + u.protein + 'g)</option>').join('');
+            document.getElementById('unitSelect').innerHTML = selectedFood.units.map((u, i) => '<option value="' + i + '">' + u.u + ' (' + u.cal + ' cal, ' + u.protein + 'g)</option>').join('');
             document.getElementById('servingSize').value = 1;
             const now = new Date();
             document.getElementById('mealTime').value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
@@ -480,39 +558,26 @@
             document.getElementById('servingSizePanel').classList.remove('hidden');
             updatePreview();
         }
-
         function updatePreview() {
             if (!selectedFood) return;
-            const unitIdx = parseInt(document.getElementById('unitSelect').value);
+            const u = selectedFood.units[parseInt(document.getElementById('unitSelect').value)];
             const qty = parseFloat(document.getElementById('servingSize').value) || 0;
-            const u = selectedFood.units[unitIdx];
-            const cal = Math.round(u.cal * qty);
-            const protein = Math.round(u.protein * qty * 10) / 10;
-            document.getElementById('previewInfo').textContent = 'รวม: ' + cal + ' cal | ' + protein + 'g protein';
+            document.getElementById('previewInfo').textContent = 'รวม: ' + Math.round(u.cal*qty) + ' cal | ' + (Math.round(u.protein*qty*10)/10) + 'g protein';
         }
-
         function addFoodToToday() {
             if (!selectedFood) return;
-            const unitIdx = parseInt(document.getElementById('unitSelect').value);
+            const u = selectedFood.units[parseInt(document.getElementById('unitSelect').value)];
             const qty = parseFloat(document.getElementById('servingSize').value);
-            const u = selectedFood.units[unitIdx];
-            const mealTime = document.getElementById('mealTime').value || new Date().toTimeString().slice(0,5);
             const food = {
-                id: Date.now().toString(),
-                foodName: selectedFood.name,
-                unit: u.u,
-                quantity: qty,
-                totalCal: Math.round(u.cal * qty),
-                totalProtein: Math.round(u.protein * qty * 10) / 10,
-                time: mealTime,
-                date: currentDate
+                id: Date.now().toString(), foodName: selectedFood.name, unit: u.u, quantity: qty,
+                totalCal: Math.round(u.cal*qty), totalProtein: Math.round(u.protein*qty*10)/10,
+                time: document.getElementById('mealTime').value || new Date().toTimeString().slice(0,5), date: currentDate
             };
             saveFoodToFirebase(food);
             document.getElementById('searchInput').value = '';
             document.getElementById('servingSizePanel').classList.add('hidden');
             selectedFood = null;
         }
-
         function showCustomFood() {
             document.getElementById('foodList').innerHTML = '';
             document.getElementById('servingSizePanel').classList.add('hidden');
@@ -520,30 +585,119 @@
             document.getElementById('customTime').value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
             document.getElementById('customFoodPanel').classList.remove('hidden');
         }
-
         function addCustomFood() {
             const name = document.getElementById('customName').value.trim();
             const unit = document.getElementById('customUnit').value.trim() || 'จาน';
             const cal = parseFloat(document.getElementById('customCal').value);
             const protein = parseFloat(document.getElementById('customProtein').value) || 0;
             if (!name || isNaN(cal)) { alert('กรุณาใส่ชื่อและแคลโลรี่'); return; }
-            const mealTime = document.getElementById('customTime').value || new Date().toTimeString().slice(0,5);
             const food = {
-                id: Date.now().toString(),
-                foodName: name, unit: unit, quantity: 1,
+                id: Date.now().toString(), foodName: name, unit: unit, quantity: 1,
                 totalCal: Math.round(cal), totalProtein: Math.round(protein*10)/10,
-                time: mealTime, date: currentDate
+                time: document.getElementById('customTime').value || new Date().toTimeString().slice(0,5), date: currentDate
             };
             saveFoodToFirebase(food);
-            document.getElementById('customName').value = '';
-            document.getElementById('customUnit').value = '';
-            document.getElementById('customCal').value = '';
-            document.getElementById('customProtein').value = '';
+            ['customName','customUnit','customCal','customProtein'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('customFoodPanel').classList.add('hidden');
         }
 
-        function removeFood(id) {
-            database.ref('users/' + uid() + '/foods/' + id).remove();
+        // ===== STATS =====
+        function setRange(days) {
+            statsRange = days;
+            document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('range-' + days).classList.add('active');
+            document.getElementById('statsRangeLabel').textContent = days + ' วันล่าสุด';
+            renderStats();
+        }
+
+        function renderStats() {
+            const labels = [], calData = [], proteinData = [], dateKeys = [];
+            const today = new Date();
+            for (let i = statsRange - 1; i >= 0; i--) {
+                const d = new Date(today); d.setDate(d.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                dateKeys.push(key);
+                labels.push(d.toLocaleDateString('th-TH', { day:'numeric', month:'short' }));
+                const dayFoods = foods.filter(f => f.date === key);
+                calData.push(dayFoods.reduce((s,f)=>s+f.totalCal,0));
+                proteinData.push(Math.round(dayFoods.reduce((s,f)=>s+f.totalProtein,0)*10)/10);
+            }
+            const daysWithData = calData.filter(c => c > 0).length;
+            const statsEmpty = document.getElementById('statsEmpty');
+            if (daysWithData === 0) {
+                statsEmpty.classList.remove('hidden');
+            } else {
+                statsEmpty.classList.add('hidden');
+            }
+
+            // summary
+            const totalCalSum = calData.reduce((s,c)=>s+c,0);
+            const totalProteinSum = proteinData.reduce((s,p)=>s+p,0);
+            const avgC = daysWithData ? Math.round(totalCalSum/daysWithData) : 0;
+            const avgP = daysWithData ? Math.round(totalProteinSum/daysWithData*10)/10 : 0;
+            const proteinGoal = parseInt(document.getElementById('proteinGoal').value);
+            const onTarget = proteinData.filter(p => p >= proteinGoal).length;
+            document.getElementById('avgCal').textContent = avgC;
+            document.getElementById('avgProtein').textContent = avgP + 'g';
+            document.getElementById('daysOnTarget').textContent = onTarget;
+
+            const calGoal = parseInt(document.getElementById('calGoal').value);
+            drawChart('calChart', calChartObj, labels, calData, 'rgba(255,180,80,1)', 'rgba(255,200,124,0.3)', calGoal, (o)=>calChartObj=o);
+            drawChart('proteinChart', proteinChartObj, labels, proteinData, 'rgba(255,130,160,1)', 'rgba(255,182,193,0.3)', proteinGoal, (o)=>proteinChartObj=o);
+        }
+
+        function drawChart(canvasId, existing, labels, data, borderColor, bgColor, goalLine, saveRef) {
+            if (existing) existing.destroy();
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data, backgroundColor: bgColor, borderColor: borderColor,
+                        borderWidth: 1.5, borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (c) => c.parsed.y + '' } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            ticks: { font: { size: 10 } }
+                        },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                },
+                plugins: [{
+                    id: 'goalLine',
+                    afterDraw: (chart) => {
+                        if (!goalLine) return;
+                        const yScale = chart.scales.y;
+                        if (goalLine > yScale.max) return;
+                        const y = yScale.getPixelForValue(goalLine);
+                        const ctx = chart.ctx;
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.setLineDash([6, 4]);
+                        ctx.moveTo(chart.chartArea.left, y);
+                        ctx.lineTo(chart.chartArea.right, y);
+                        ctx.strokeStyle = 'rgba(120,120,120,0.7)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = 'rgba(120,120,120,0.9)';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText('เป้า ' + goalLine, chart.chartArea.left + 4, y - 4);
+                        ctx.restore();
+                    }
+                }]
+            });
+            saveRef(chart);
         }
 
         function init() { updateDate(); updateDisplay(); }
