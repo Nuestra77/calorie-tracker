@@ -986,13 +986,14 @@
             try {
                 const caps = scanTrack.getCapabilities();
                 if (caps.zoom && caps.zoom.max > caps.zoom.min) {
-                    zoomCap = { min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.5 };
+                    // แบ่งช่วงซูมเป็น 10 ขั้นเท่าๆ กัน (ไม่พึ่ง step จากกล้องที่บางเครื่องเป็น 0)
+                    const range = caps.zoom.max - caps.zoom.min;
+                    zoomCap = { min: caps.zoom.min, max: caps.zoom.max, step: range / 10 };
                     const settings = scanTrack.getSettings();
                     curZoom = settings.zoom || zoomCap.min || 1;
                     document.getElementById('zoomControls').classList.remove('hidden');
                     updateZoomLabel();
                 } else {
-                    // กล้องไม่รองรับซูม — ซ่อนปุ่ม
                     document.getElementById('zoomControls').classList.add('hidden');
                 }
             } catch (e) {
@@ -1002,12 +1003,14 @@
 
         function changeZoom(dir) {
             if (!scanTrack || !zoomCap) return;
-            const step = zoomCap.step * 2; // ก้าวใหญ่ขึ้นให้กดน้อยครั้ง
+            // ก้าวซูม: ใช้ step ที่คำนวณเอง กันกรณี step เป็น 0
+            let step = zoomCap.step;
+            if (!step || step <= 0) step = (zoomCap.max - zoomCap.min) / 10 || 0.5;
             curZoom = Math.min(zoomCap.max, Math.max(zoomCap.min, curZoom + dir * step));
             try {
                 scanTrack.applyConstraints({ advanced: [{ zoom: curZoom }] });
-                updateZoomLabel();
             } catch (e) {}
+            updateZoomLabel();
         }
 
         function updateZoomLabel() {
