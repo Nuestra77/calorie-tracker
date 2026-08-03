@@ -162,17 +162,20 @@
 
                 <div id="scanPanel" class="hidden card" style="text-align:center;">
                     <div class="log-name" style="margin-bottom:0.75rem;">📷 ส่องบาร์โค้ดให้อยู่ในกรอบ</div>
-                    <video id="scanVideo" style="width:100%; max-width:100%; border-radius:12px; background:#000;" playsinline onclick="tapFocus()"></video>
+                    <video id="scanVideo" style="width:100%; max-width:100%; border-radius:12px; background:#000;" playsinline></video>
                     <div class="food-info" id="scanStatus" style="margin-top:0.5rem;">กำลังเปิดกล้อง...</div>
-                    <div class="food-info" style="margin-top:0.25rem; font-size:11px;">เคล็ดลับ: ถ้าเบลอตอนเข้าใกล้ ลองแตะที่ภาพเพื่อโฟกัส หรือใช้ปุ่ม "ถ่ายรูป" ด้านล่าง</div>
-                    <button onclick="captureAndScan()" class="btn-primary" style="margin-top:0.75rem;">📸 ถ่ายรูปบาร์โค้ด (แม่นกว่า)</button>
+                    <div id="zoomControls" class="hidden" style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-top:0.75rem;">
+                        <button onclick="changeZoom(-1)" style="font-size:18px; padding:0.4rem 1rem;">➖</button>
+                        <span class="food-info" id="zoomLabel">ซูม 1.0x</span>
+                        <button onclick="changeZoom(1)" style="font-size:18px; padding:0.4rem 1rem;">➕</button>
+                    </div>
+                    <div class="food-info" style="margin-top:0.5rem; font-size:11px;">เคล็ดลับ: อยู่ระยะที่ภาพชัด แล้วกด ➕ ซูมเข้าหาบาร์โค้ด แทนการขยับเข้าใกล้</div>
                     <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
                         <input type="text" id="manualBarcode" placeholder="หรือพิมพ์เลขบาร์โค้ด" inputmode="numeric" style="margin-bottom:0;">
                         <button onclick="submitManualBarcode()" style="white-space:nowrap;">ค้นหา</button>
                     </div>
                     <button onclick="stopScan()" style="margin-top:0.75rem;">ยกเลิก</button>
                 </div>
-                <input type="file" id="barcodePhoto" accept="image/*" capture="environment" style="display:none;" onchange="scanFromPhoto(event)">
 
                 <div id="scanResultPanel" class="hidden card" style="background:rgba(200,230,201,0.2);">
                     <div class="log-name" style="margin-bottom:0.75rem;">✅ พบสินค้า (แก้ไขได้ก่อนบันทึก)</div>
@@ -931,6 +934,9 @@
         let scanData = null;
 
         let scanStream = null;
+        let scanTrack = null;
+        let zoomCap = null;   // {min,max,step}
+        let curZoom = 1;
 
         async function startScan() {
             if (typeof ZXing === 'undefined') {
@@ -942,19 +948,17 @@
             document.getElementById('customFoodPanel').classList.add('hidden');
             document.getElementById('scanResultPanel').classList.add('hidden');
             document.getElementById('scanPanel').classList.remove('hidden');
+            document.getElementById('zoomControls').classList.add('hidden');
             document.getElementById('scanStatus').textContent = 'กำลังเปิดกล้อง...';
 
             try {
                 codeReader = new ZXing.BrowserMultiFormatReader();
                 const videoEl = document.getElementById('scanVideo');
-                // ขอกล้องหลัง + ความละเอียดสูง + โฟกัสต่อเนื่อง (ช่วยเรื่องเบลอตอนเข้าใกล้)
                 const constraints = {
                     video: {
                         facingMode: { ideal: 'environment' },
                         width: { ideal: 1920 },
-                        height: { ideal: 1080 },
-                        focusMode: 'continuous',
-                        advanced: [{ focusMode: 'continuous' }]
+                        height: { ideal: 1080 }
                     }
                 };
                 await codeReader.decodeFromConstraints(constraints, videoEl, (result, err) => {
@@ -964,69 +968,50 @@
                         lookupBarcode(code);
                     }
                 });
-                // เก็บ stream ไว้ปรับโฟกัส/ปิดกล้อง
                 scanStream = videoEl.srcObject;
-                // พยายามตั้งโฟกัสต่อเนื่องอีกครั้งหลังกล้องเปิด (บางเครื่องต้องตั้งหลัง track เริ่ม)
-                tryApplyFocus('continuous');
-                document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดให้ชัดในกรอบ (แตะภาพถ้าเบลอ)';
+                setupZoom();
+                document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดให้ชัด แล้วกด ➕ ซูมเข้าหา';
             } catch (e) {
                 document.getElementById('scanStatus').textContent = 'เปิดกล้องไม่ได้: ' + (e.message || e);
                 setTimeout(() => {
-                    alert('เปิดกล้องไม่ได้ อาจเป็นเพราะยังไม่อนุญาตสิทธิ์กล้อง หรือ browser ไม่รองรับ\n\nลองใช้ปุ่ม "ถ่ายรูปบาร์โค้ด" แทน หรือพิมพ์เลขบาร์โค้ดเอง');
+                    alert('เปิดกล้องไม่ได้ อาจยังไม่อนุญาตสิทธิ์กล้อง\n\nลองพิมพ์เลขบาร์โค้ดเองด้านล่างได้');
                 }, 100);
             }
         }
 
-        function tryApplyFocus(mode) {
+        function setupZoom() {
             if (!scanStream) return;
-            const track = scanStream.getVideoTracks()[0];
-            if (!track || !track.getCapabilities) return;
+            scanTrack = scanStream.getVideoTracks()[0];
+            if (!scanTrack || !scanTrack.getCapabilities) return;
             try {
-                const caps = track.getCapabilities();
-                if (caps.focusMode && caps.focusMode.includes(mode)) {
-                    track.applyConstraints({ advanced: [{ focusMode: mode }] });
+                const caps = scanTrack.getCapabilities();
+                if (caps.zoom && caps.zoom.max > caps.zoom.min) {
+                    zoomCap = { min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.5 };
+                    const settings = scanTrack.getSettings();
+                    curZoom = settings.zoom || zoomCap.min || 1;
+                    document.getElementById('zoomControls').classList.remove('hidden');
+                    updateZoomLabel();
+                } else {
+                    // กล้องไม่รองรับซูม — ซ่อนปุ่ม
+                    document.getElementById('zoomControls').classList.add('hidden');
                 }
-            } catch (e) {}
-        }
-
-        function tapFocus() {
-            // แตะภาพเพื่อกระตุ้นโฟกัสใหม่ (single-shot แล้วกลับเป็น continuous)
-            if (!scanStream) return;
-            const track = scanStream.getVideoTracks()[0];
-            if (!track || !track.getCapabilities) return;
-            try {
-                const caps = track.getCapabilities();
-                if (caps.focusMode && caps.focusMode.includes('single-shot')) {
-                    track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
-                    setTimeout(() => tryApplyFocus('continuous'), 800);
-                    document.getElementById('scanStatus').textContent = 'กำลังโฟกัส...';
-                    setTimeout(() => { document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดให้ชัดในกรอบ'; }, 1000);
-                }
-            } catch (e) {}
-        }
-
-        // ถ่ายรูปบาร์โค้ด (โฟกัสอัตโนมัติดีกว่าโหมดวิดีโอ) — เปิด file picker ที่ใช้กล้องถ่ายรูป
-        function captureAndScan() {
-            document.getElementById('barcodePhoto').click();
-        }
-
-        async function scanFromPhoto(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            event.target.value = '';
-            if (typeof ZXing === 'undefined') { alert('ตัวอ่านบาร์โค้ดยังไม่พร้อม'); return; }
-            document.getElementById('scanStatus').textContent = 'กำลังอ่านบาร์โค้ดจากรูป...';
-            try {
-                const url = URL.createObjectURL(file);
-                const reader = new ZXing.BrowserMultiFormatReader();
-                const result = await reader.decodeFromImageUrl(url);
-                URL.revokeObjectURL(url);
-                stopScan();
-                lookupBarcode(result.getText());
             } catch (e) {
-                document.getElementById('scanStatus').textContent = 'อ่านบาร์โค้ดจากรูปไม่สำเร็จ';
-                alert('อ่านบาร์โค้ดจากรูปไม่ได้ ลองถ่ายใหม่ให้บาร์โค้ดชัดและเต็มเฟรม หรือพิมพ์เลขบาร์โค้ดเอง');
+                document.getElementById('zoomControls').classList.add('hidden');
             }
+        }
+
+        function changeZoom(dir) {
+            if (!scanTrack || !zoomCap) return;
+            const step = zoomCap.step * 2; // ก้าวใหญ่ขึ้นให้กดน้อยครั้ง
+            curZoom = Math.min(zoomCap.max, Math.max(zoomCap.min, curZoom + dir * step));
+            try {
+                scanTrack.applyConstraints({ advanced: [{ zoom: curZoom }] });
+                updateZoomLabel();
+            } catch (e) {}
+        }
+
+        function updateZoomLabel() {
+            document.getElementById('zoomLabel').textContent = 'ซูม ' + curZoom.toFixed(1) + 'x';
         }
 
         function submitManualBarcode() {
@@ -1041,7 +1026,7 @@
                 try { codeReader.reset(); } catch (e) {}
                 codeReader = null;
             }
-            scanStream = null;
+            scanStream = null; scanTrack = null; zoomCap = null; curZoom = 1;
             document.getElementById('manualBarcode').value = '';
             document.getElementById('scanPanel').classList.add('hidden');
         }
