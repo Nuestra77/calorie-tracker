@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; background: linear-gradient(135deg, #fce4ec 0%, #e0f2f1 100%); min-height: 100vh; padding: 1rem; }
@@ -153,9 +154,34 @@
 
                 <div class="card">
                     <label>🍽️ ค้นหาอาหาร</label>
-                    <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0;">
-                    <div class="food-list" id="foodList"></div>
+                    <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0.75rem;">
+                    <button onclick="startScan()" style="width:100%; background:linear-gradient(135deg, rgba(200,230,201,0.5), rgba(176,224,230,0.4)); font-size:14px; padding:0.7rem;">📷 สแกนบาร์โค้ด (ขนม/เครื่องดื่ม)</button>
+                    <div class="food-list" id="foodList" style="margin-top:1rem;"></div>
                     <div class="custom-link"><a onclick="showCustomFood()">+ เพิ่มอาหารที่ไม่มีในลิสต์เอง</a></div>
+                </div>
+
+                <div id="scanPanel" class="hidden card" style="text-align:center;">
+                    <div class="log-name" style="margin-bottom:0.75rem;">📷 ส่องบาร์โค้ดให้อยู่ในกรอบ</div>
+                    <video id="scanVideo" style="width:100%; max-width:100%; border-radius:12px; background:#000;" playsinline></video>
+                    <div class="food-info" id="scanStatus" style="margin-top:0.5rem;">กำลังเปิดกล้อง...</div>
+                    <button onclick="stopScan()" style="margin-top:0.75rem;">ยกเลิก</button>
+                </div>
+
+                <div id="scanResultPanel" class="hidden card" style="background:rgba(200,230,201,0.2);">
+                    <div class="log-name" style="margin-bottom:0.75rem;">✅ พบสินค้า (แก้ไขได้ก่อนบันทึก)</div>
+                    <label>ชื่อสินค้า</label>
+                    <input type="text" id="scanName">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+                        <div><label style="font-size:11px;">แคล</label><input type="number" id="scanCal" style="margin-bottom:0;"></div>
+                        <div><label style="font-size:11px;">โปรตีน g</label><input type="number" id="scanProtein" style="margin-bottom:0;"></div>
+                        <div><label style="font-size:11px;">คาร์บ g</label><input type="number" id="scanCarb" style="margin-bottom:0;"></div>
+                        <div><label style="font-size:11px;">ไขมัน g</label><input type="number" id="scanFat" style="margin-bottom:0;"></div>
+                    </div>
+                    <div class="food-info" id="scanServingNote" style="margin:0.5rem 0;"></div>
+                    <label style="margin-top:0.5rem;">🕐 เวลากินอาหาร</label>
+                    <input type="time" id="scanTime">
+                    <button class="btn-primary" onclick="addScanFood()">➕ เพิ่มอาหาร</button>
+                    <div class="custom-link" style="margin-top:0.75rem;"><a onclick="cancelScan()">ยกเลิก</a></div>
                 </div>
 
                 <div id="servingSizePanel" class="hidden card">
@@ -891,6 +917,121 @@
                 }]
             });
             saveRef(chart);
+        }
+
+        // ===== BARCODE SCAN =====
+        let codeReader = null;
+        let scanData = null;
+
+        async function startScan() {
+            if (typeof ZXing === 'undefined') {
+                alert('ตัวอ่านบาร์โค้ดยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง');
+                return;
+            }
+            document.getElementById('foodList').innerHTML = '';
+            document.getElementById('servingSizePanel').classList.add('hidden');
+            document.getElementById('customFoodPanel').classList.add('hidden');
+            document.getElementById('scanResultPanel').classList.add('hidden');
+            document.getElementById('scanPanel').classList.remove('hidden');
+            document.getElementById('scanStatus').textContent = 'กำลังเปิดกล้อง...';
+
+            try {
+                codeReader = new ZXing.BrowserMultiFormatReader();
+                const videoEl = document.getElementById('scanVideo');
+                // ใช้กล้องหลังถ้ามี
+                await codeReader.decodeFromConstraints(
+                    { video: { facingMode: 'environment' } },
+                    videoEl,
+                    (result, err) => {
+                        if (result) {
+                            const code = result.getText();
+                            stopScan();
+                            lookupBarcode(code);
+                        }
+                    }
+                );
+                document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดให้ชัดในกรอบ...';
+            } catch (e) {
+                document.getElementById('scanStatus').textContent = 'เปิดกล้องไม่ได้: ' + (e.message || e);
+                setTimeout(() => {
+                    alert('เปิดกล้องไม่ได้ อาจเป็นเพราะยังไม่อนุญาตสิทธิ์กล้อง หรือ browser ไม่รองรับ\n\nลองเปิดผ่าน Chrome/Safari บนมือถือและกดอนุญาตกล้อง');
+                }, 100);
+            }
+        }
+
+        function stopScan() {
+            if (codeReader) {
+                try { codeReader.reset(); } catch (e) {}
+                codeReader = null;
+            }
+            document.getElementById('scanPanel').classList.add('hidden');
+        }
+
+        async function lookupBarcode(code) {
+            document.getElementById('foodList').innerHTML = '<div class="food-info" style="padding:0.5rem;">🔍 กำลังค้นหาบาร์โค้ด ' + code + '...</div>';
+            try {
+                const res = await fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(code) + '.json?fields=product_name,product_name_th,brands,nutriments,serving_size');
+                const data = await res.json();
+                document.getElementById('foodList').innerHTML = '';
+
+                if (data.status !== 1 || !data.product) {
+                    alert('ไม่พบสินค้านี้ในฐานข้อมูล (บาร์โค้ด: ' + code + ')\n\nสินค้าไทยบางตัวอาจยังไม่มีข้อมูล ลองพิมพ์ค้นหาหรือเพิ่มเองได้');
+                    return;
+                }
+
+                const p = data.product;
+                const n = p.nutriments || {};
+                const name = p.product_name_th || p.product_name || (p.brands ? p.brands : 'สินค้า') || 'สินค้า';
+
+                // Open Food Facts เก็บค่าต่อ 100g เป็นหลัก
+                const per = '100g';
+                scanData = {
+                    name: name,
+                    cal: Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || 0),
+                    protein: Math.round((n['proteins_100g'] || 0) * 10) / 10,
+                    carb: Math.round((n['carbohydrates_100g'] || 0) * 10) / 10,
+                    fat: Math.round((n['fat_100g'] || 0) * 10) / 10,
+                    per: per
+                };
+
+                document.getElementById('scanName').value = scanData.name;
+                document.getElementById('scanCal').value = scanData.cal;
+                document.getElementById('scanProtein').value = scanData.protein;
+                document.getElementById('scanCarb').value = scanData.carb;
+                document.getElementById('scanFat').value = scanData.fat;
+                document.getElementById('scanServingNote').textContent = 'ℹ️ ค่าต่อ 100g (จากฉลาก) — ปรับตัวเลขให้ตรงกับที่กินจริงได้';
+                const now = new Date();
+                document.getElementById('scanTime').value = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+                document.getElementById('scanResultPanel').classList.remove('hidden');
+            } catch (e) {
+                document.getElementById('foodList').innerHTML = '';
+                alert('เชื่อมต่อฐานข้อมูลไม่ได้: ' + (e.message || e));
+            }
+        }
+
+        function addScanFood() {
+            const name = document.getElementById('scanName').value.trim();
+            const cal = parseFloat(document.getElementById('scanCal').value);
+            if (!name || isNaN(cal)) { alert('กรุณาใส่ชื่อและแคลโลรี่'); return; }
+            const food = {
+                id: Date.now().toString(),
+                foodName: name,
+                unit: (scanData && scanData.per) || '100g',
+                quantity: 1,
+                totalCal: Math.round(cal),
+                totalProtein: Math.round((parseFloat(document.getElementById('scanProtein').value) || 0) * 10) / 10,
+                totalCarb: Math.round((parseFloat(document.getElementById('scanCarb').value) || 0) * 10) / 10,
+                totalFat: Math.round((parseFloat(document.getElementById('scanFat').value) || 0) * 10) / 10,
+                time: document.getElementById('scanTime').value || new Date().toTimeString().slice(0,5),
+                date: currentDate
+            };
+            saveFoodToFirebase(food);
+            cancelScan();
+        }
+
+        function cancelScan() {
+            scanData = null;
+            document.getElementById('scanResultPanel').classList.add('hidden');
         }
 
         function init() { updateDate(); updateDisplay(); }
