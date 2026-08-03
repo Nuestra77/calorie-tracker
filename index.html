@@ -145,6 +145,12 @@
                 <div class="progress-bar"><div class="progress-fill" id="progressBar" style="width:0%"></div></div>
                 <div class="progress-text" id="progressText">ยังขาด 120g โปรตีน</div>
 
+                <div class="summary-row" style="margin-bottom:1.5rem;">
+                    <div class="summary-box" style="background:rgba(255,182,193,0.15);"><div class="summary-val" id="mProtein">0</div><div class="summary-lbl">โปรตีน (g)</div></div>
+                    <div class="summary-box" style="background:rgba(176,224,230,0.15);"><div class="summary-val" id="mCarb">0</div><div class="summary-lbl">คาร์บ (g)</div></div>
+                    <div class="summary-box" style="background:rgba(255,220,150,0.2);"><div class="summary-val" id="mFat">0</div><div class="summary-lbl">ไขมัน (g)</div></div>
+                </div>
+
                 <div class="card">
                     <label>🍽️ ค้นหาอาหาร</label>
                     <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0;">
@@ -174,6 +180,10 @@
                     <input type="number" id="customCal" placeholder="เช่น 350">
                     <label>โปรตีน g (ต่อ 1 หน่วย)</label>
                     <input type="number" id="customProtein" placeholder="เช่น 15">
+                    <label>คาร์บ g (ไม่บังคับ)</label>
+                    <input type="number" id="customCarb" placeholder="เช่น 45">
+                    <label>ไขมัน g (ไม่บังคับ)</label>
+                    <input type="number" id="customFat" placeholder="เช่น 10">
                     <label>🕐 เวลากินอาหาร</label>
                     <input type="time" id="customTime">
                     <button class="btn-primary" onclick="addCustomFood()">➕ เพิ่มอาหาร</button>
@@ -270,132 +280,132 @@
 
         const foodDatabase = [
     // === ข้าว/แป้ง ===
-    { name: 'ข้าวสวย', cat: 'ข้าว/แป้ง', units: [{u:'ทัพพี', cal:80, protein:1.7}, {u:'จาน', cal:240, protein:5}, {u:'ชาม', cal:200, protein:4.2}] },
-    { name: 'ข้าวกล้อง', cat: 'ข้าว/แป้ง', units: [{u:'ทัพพี', cal:82, protein:1.8}, {u:'จาน', cal:246, protein:5.4}] },
-    { name: 'ข้าวเหนียว', cat: 'ข้าว/แป้ง', units: [{u:'ปั้น', cal:100, protein:2}, {u:'ห่อ', cal:200, protein:4}] },
-    { name: 'ข้าวโอ๊ต', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:150, protein:5}, {u:'g', cal:3.9, protein:0.17}] },
-    { name: 'ขนมปัง', cat: 'ข้าว/แป้ง', units: [{u:'แผ่น', cal:70, protein:2.5}, {u:'ชิ้น', cal:70, protein:2.5}] },
-    { name: 'บะหมี่', cat: 'ข้าว/แป้ง', units: [{u:'ก้อน', cal:190, protein:6}, {u:'ชาม', cal:290, protein:9}] },
-    { name: 'เส้นเล็ก', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:200, protein:5}] },
-    { name: 'เส้นใหญ่', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:220, protein:5}] },
-    { name: 'วุ้นเส้น', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:160, protein:0.3}] },
-    { name: 'มักกะโรนี', cat: 'ข้าว/แป้ง', units: [{u:'จาน', cal:220, protein:8}] },
+    { name: 'ข้าวสวย', cat: 'ข้าว/แป้ง', units: [{u:'ทัพพี', cal:80, protein:1.7, carb:16.7, fat:0.7}, {u:'จาน', cal:240, protein:5, carb:50.1, fat:2.2}, {u:'ชาม', cal:200, protein:4.2, carb:41.7, fat:1.8}] },
+    { name: 'ข้าวกล้อง', cat: 'ข้าว/แป้ง', units: [{u:'ทัพพี', cal:82, protein:1.8, carb:17, fat:0.7}, {u:'จาน', cal:246, protein:5.4, carb:51.1, fat:2.2}] },
+    { name: 'ข้าวเหนียว', cat: 'ข้าว/แป้ง', units: [{u:'ปั้น', cal:100, protein:2, carb:21, fat:0.9}, {u:'ห่อ', cal:200, protein:4, carb:41.9, fat:1.8}] },
+    { name: 'ข้าวโอ๊ต', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:150, protein:5, carb:29.6, fat:1.3}, {u:'g', cal:3.9, protein:0.17, carb:0.7, fat:0}] },
+    { name: 'ขนมปัง', cat: 'ข้าว/แป้ง', units: [{u:'แผ่น', cal:70, protein:2.5, carb:13.7, fat:0.6}, {u:'ชิ้น', cal:70, protein:2.5, carb:13.7, fat:0.6}] },
+    { name: 'บะหมี่', cat: 'ข้าว/แป้ง', units: [{u:'ก้อน', cal:190, protein:6, carb:37.8, fat:1.6}, {u:'ชาม', cal:290, protein:9, carb:57.9, fat:2.5}] },
+    { name: 'เส้นเล็ก', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:200, protein:5, carb:41, fat:1.8}] },
+    { name: 'เส้นใหญ่', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:220, protein:5, carb:45.6, fat:2}] },
+    { name: 'วุ้นเส้น', cat: 'ข้าว/แป้ง', units: [{u:'ชาม', cal:160, protein:0.3, carb:36.2, fat:1.6}] },
+    { name: 'มักกะโรนี', cat: 'ข้าว/แป้ง', units: [{u:'จาน', cal:220, protein:8, carb:42.8, fat:1.9}] },
 
     // === อาหารจานเดียว/สตรีทฟู้ด ===
-    { name: 'ข้าวมันไก่', cat: 'จานเดียว', units: [{u:'จาน', cal:590, protein:26}] },
-    { name: 'ข้าวหมูแดง', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:24}] },
-    { name: 'ข้าวหมูกรอบ', cat: 'จานเดียว', units: [{u:'จาน', cal:680, protein:22}] },
-    { name: 'ข้าวขาหมู', cat: 'จานเดียว', units: [{u:'จาน', cal:620, protein:28}] },
-    { name: 'ข้าวไก่ทอด', cat: 'จานเดียว', units: [{u:'จาน', cal:650, protein:30}] },
-    { name: 'ข้าวกะเพราหมู', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:24}] },
-    { name: 'ข้าวกะเพราไก่', cat: 'จานเดียว', units: [{u:'จาน', cal:540, protein:28}] },
-    { name: 'ข้าวกะเพราไข่ดาว', cat: 'จานเดียว', units: [{u:'จาน', cal:650, protein:30}] },
-    { name: 'ข้าวผัด', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:14}] },
-    { name: 'ข้าวผัดกุ้ง', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:22}] },
-    { name: 'ข้าวคลุกกะปิ', cat: 'จานเดียว', units: [{u:'จาน', cal:590, protein:18}] },
-    { name: 'ข้าวraดแกงเขียวหวาน', cat: 'จานเดียว', units: [{u:'จาน', cal:550, protein:20}] },
-    { name: 'ข้าวraดพะแนง', cat: 'จานเดียว', units: [{u:'จาน', cal:600, protein:24}] },
-    { name: 'ข้าวไข่เจียว', cat: 'จานเดียว', units: [{u:'จาน', cal:480, protein:16}] },
-    { name: 'ข้าวหน้าเป็ด', cat: 'จานเดียว', units: [{u:'จาน', cal:600, protein:30}] },
-    { name: 'ข้าวซอย', cat: 'จานเดียว', units: [{u:'ชาม', cal:590, protein:24}] },
-    { name: 'ผัดไทย', cat: 'จานเดียว', units: [{u:'จาน', cal:550, protein:18}] },
-    { name: 'ผัดซีอิ๊ว', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:16}] },
-    { name: 'ราดหน้า', cat: 'จานเดียว', units: [{u:'จาน', cal:500, protein:18}] },
-    { name: 'ผัดกระเพราทะเล', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:26}] },
-    { name: 'หอยทอด', cat: 'จานเดียว', units: [{u:'จาน', cal:480, protein:16}] },
-    { name: 'ผัดมาม่า', cat: 'จานเดียว', units: [{u:'จาน', cal:450, protein:12}] },
+    { name: 'ข้าวมันไก่', cat: 'จานเดียว', units: [{u:'จาน', cal:590, protein:26, carb:68.3, fat:23.6}] },
+    { name: 'ข้าวหมูแดง', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:24, carb:65.2, fat:22.6}] },
+    { name: 'ข้าวหมูกรอบ', cat: 'จานเดียว', units: [{u:'จาน', cal:680, protein:22, carb:83.2, fat:28.8}] },
+    { name: 'ข้าวขาหมู', cat: 'จานเดียว', units: [{u:'จาน', cal:620, protein:28, carb:71.4, fat:24.7}] },
+    { name: 'ข้าวไก่ทอด', cat: 'จานเดียว', units: [{u:'จาน', cal:650, protein:30, carb:74.5, fat:25.8}] },
+    { name: 'ข้าวกะเพราหมู', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:24, carb:65.2, fat:22.6}] },
+    { name: 'ข้าวกะเพราไก่', cat: 'จานเดียว', units: [{u:'จาน', cal:540, protein:28, carb:60.2, fat:20.8}] },
+    { name: 'ข้าวกะเพราไข่ดาว', cat: 'จานเดียว', units: [{u:'จาน', cal:650, protein:30, carb:74.5, fat:25.8}] },
+    { name: 'ข้าวผัด', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:14, carb:65.2, fat:22.6}] },
+    { name: 'ข้าวผัดกุ้ง', cat: 'จานเดียว', units: [{u:'จาน', cal:560, protein:22, carb:66.4, fat:22.9}] },
+    { name: 'ข้าวคลุกกะปิ', cat: 'จานเดียว', units: [{u:'จาน', cal:590, protein:18, carb:72.8, fat:25.2}] },
+    { name: 'ข้าวraดแกงเขียวหวาน', cat: 'จานเดียว', units: [{u:'จาน', cal:550, protein:20, carb:66.1, fat:22.8}] },
+    { name: 'ข้าวraดพะแนง', cat: 'จานเดียว', units: [{u:'จาน', cal:600, protein:24, carb:70.9, fat:24.5}] },
+    { name: 'ข้าวไข่เจียว', cat: 'จานเดียว', units: [{u:'จาน', cal:480, protein:16, carb:58.5, fat:20.2}] },
+    { name: 'ข้าวหน้าเป็ด', cat: 'จานเดียว', units: [{u:'จาน', cal:600, protein:30, carb:67.5, fat:23.3}] },
+    { name: 'ข้าวซอย', cat: 'จานเดียว', units: [{u:'ชาม', cal:590, protein:24, carb:69.5, fat:24}] },
+    { name: 'ผัดไทย', cat: 'จานเดียว', units: [{u:'จาน', cal:550, protein:18, carb:67.2, fat:23.2}] },
+    { name: 'ผัดซีอิ๊ว', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:16, carb:64.1, fat:22.2}] },
+    { name: 'ราดหน้า', cat: 'จานเดียว', units: [{u:'จาน', cal:500, protein:18, carb:60.2, fat:20.8}] },
+    { name: 'ผัดกระเพราทะเล', cat: 'จานเดียว', units: [{u:'จาน', cal:520, protein:26, carb:58.5, fat:20.2}] },
+    { name: 'หอยทอด', cat: 'จานเดียว', units: [{u:'จาน', cal:480, protein:16, carb:58.5, fat:20.2}] },
+    { name: 'ผัดมาม่า', cat: 'จานเดียว', units: [{u:'จาน', cal:450, protein:12, carb:56.5, fat:19.5}] },
 
     // === ก๋วยเตี๋ยว/เส้น ===
-    { name: 'ก๋วยเตี๋ยวหมูน้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:350, protein:18}] },
-    { name: 'ก๋วยเตี๋ยวเนื้อน้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:22}] },
-    { name: 'ก๋วยเตี๋ยวต้มยำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:400, protein:18}] },
-    { name: 'ก๋วยเตี๋ยวเรือ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:420, protein:20}] },
-    { name: 'เย็นตาโฟ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:16}] },
-    { name: 'บะหมี่เกี๊ยว', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:18}] },
-    { name: 'บะหมี่หมูแดง', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:420, protein:22}] },
-    { name: 'สุกี้น้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:350, protein:24}] },
-    { name: 'สุกี้แห้ง', cat: 'ก๋วยเตี๋ยว', units: [{u:'จาน', cal:450, protein:26}] },
+    { name: 'ก๋วยเตี๋ยวหมูน้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:350, protein:18, carb:46.3, fat:10.3}] },
+    { name: 'ก๋วยเตี๋ยวเนื้อน้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:22, carb:48.7, fat:10.8}] },
+    { name: 'ก๋วยเตี๋ยวต้มยำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:400, protein:18, carb:54.7, fat:12.1}] },
+    { name: 'ก๋วยเตี๋ยวเรือ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:420, protein:20, carb:56.7, fat:12.6}] },
+    { name: 'เย็นตาโฟ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:16, carb:52.7, fat:11.7}] },
+    { name: 'บะหมี่เกี๊ยว', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:380, protein:18, carb:51.3, fat:11.4}] },
+    { name: 'บะหมี่หมูแดง', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:420, protein:22, carb:55.3, fat:12.3}] },
+    { name: 'สุกี้น้ำ', cat: 'ก๋วยเตี๋ยว', units: [{u:'ชาม', cal:350, protein:24, carb:42.3, fat:9.4}] },
+    { name: 'สุกี้แห้ง', cat: 'ก๋วยเตี๋ยว', units: [{u:'จาน', cal:450, protein:26, carb:57.7, fat:12.8}] },
 
     // === ส้มตำ/ยำ/อีสาน ===
-    { name: 'ส้มตำไทย', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:120, protein:4}] },
-    { name: 'ส้มตำปูปลาร้า', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:150, protein:6}] },
-    { name: 'ตำถั่ว', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:130, protein:5}] },
-    { name: 'ลาบหมู', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:250, protein:22}] },
-    { name: 'น้ำตกหมู', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:280, protein:24}] },
-    { name: 'ยำวุ้นเส้น', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:200, protein:12}] },
-    { name: 'ยำมาม่า', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:350, protein:14}] },
-    { name: 'ไก่ย่าง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:120, protein:14}, {u:'ตัว', cal:500, protein:60}] },
-    { name: 'คอหมูย่าง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:150, protein:12}, {u:'จาน', cal:400, protein:32}] },
-    { name: 'ข้าวเหนียวหมูปิ้ง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:90, protein:6}] },
+    { name: 'ส้มตำไทย', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:120, protein:4, carb:13, fat:5.8}] },
+    { name: 'ส้มตำปูปลาร้า', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:150, protein:6, carb:15.8, fat:7}] },
+    { name: 'ตำถั่ว', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:130, protein:5, carb:13.8, fat:6.1}] },
+    { name: 'ลาบหมู', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:250, protein:22, carb:20.2, fat:9}] },
+    { name: 'น้ำตกหมู', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:280, protein:24, carb:23, fat:10.2}] },
+    { name: 'ยำวุ้นเส้น', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:200, protein:12, carb:19, fat:8.4}] },
+    { name: 'ยำมาม่า', cat: 'ส้มตำ/ยำ', units: [{u:'จาน', cal:350, protein:14, carb:36.8, fat:16.3}] },
+    { name: 'ไก่ย่าง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:120, protein:14, carb:8, fat:3.6}, {u:'ตัว', cal:500, protein:60, carb:32.5, fat:14.4}] },
+    { name: 'คอหมูย่าง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:150, protein:12, carb:12.8, fat:5.7}, {u:'จาน', cal:400, protein:32, carb:34, fat:15.1}] },
+    { name: 'ข้าวเหนียวหมูปิ้ง', cat: 'ส้มตำ/ยำ', units: [{u:'ไม้', cal:90, protein:6, carb:8.2, fat:3.7}] },
 
     // === เนื้อสัตว์/โปรตีน ===
-    { name: 'อกไก่ต้ม/ย่าง', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:165, protein:31}, {u:'g', cal:1.65, protein:0.31}] },
-    { name: 'สะโพกไก่', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:209, protein:26}] },
-    { name: 'ไข่ไก่ต้ม', cat: 'โปรตีน', units: [{u:'ฟอง', cal:78, protein:6.3}] },
-    { name: 'ไข่ดาว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:110, protein:6.5}] },
-    { name: 'ไข่เจียว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:120, protein:7}] },
-    { name: 'ไข่ขาว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:17, protein:3.6}] },
-    { name: 'หมูสับ', cat: 'โปรตีน', units: [{u:'g', cal:2.6, protein:0.22}, {u:'ขีด(100g)', cal:260, protein:22}] },
-    { name: 'เนื้อหมูสันใน', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:143, protein:21}] },
-    { name: 'เนื้อวัว', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:250, protein:26}] },
-    { name: 'ปลาแซลมอน', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:208, protein:20}] },
-    { name: 'ปลาทู', cat: 'โปรตีน', units: [{u:'ตัว', cal:180, protein:20}] },
-    { name: 'ปลานิลทอด', cat: 'โปรตีน', units: [{u:'ตัว', cal:280, protein:30}] },
-    { name: 'กุ้ง', cat: 'โปรตีน', units: [{u:'ตัว', cal:10, protein:2}, {u:'ขีด(100g)', cal:99, protein:24}] },
-    { name: 'ปลาหมึก', cat: 'โปรตีน', units: [{u:'ขีด(100g)', cal:92, protein:16}] },
-    { name: 'ทูน่ากระป๋อง', cat: 'โปรตีน', units: [{u:'กระป๋อง', cal:110, protein:25}] },
-    { name: 'เต้าหู้', cat: 'โปรตีน', units: [{u:'ก้อน', cal:80, protein:8}] },
-    { name: 'อกไก่ทอด', cat: 'โปรตีน', units: [{u:'ชิ้น', cal:220, protein:26}] },
+    { name: 'อกไก่ต้ม/ย่าง', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:165, protein:31, carb:1, fat:4.1}, {u:'g', cal:1.65, protein:0.31, carb:0, fat:0}] },
+    { name: 'สะโพกไก่', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:209, protein:26, carb:2.6, fat:10.5}] },
+    { name: 'ไข่ไก่ต้ม', cat: 'โปรตีน', units: [{u:'ฟอง', cal:78, protein:6.3, carb:1.3, fat:5.3}] },
+    { name: 'ไข่ดาว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:110, protein:6.5, carb:2.1, fat:8.4}] },
+    { name: 'ไข่เจียว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:120, protein:7, carb:2.3, fat:9.2}] },
+    { name: 'ไข่ขาว', cat: 'โปรตีน', units: [{u:'ฟอง', cal:17, protein:3.6, carb:0.1, fat:0.3}] },
+    { name: 'หมูสับ', cat: 'โปรตีน', units: [{u:'g', cal:2.6, protein:0.22, carb:0, fat:0.2}, {u:'ขีด(100g)', cal:260, protein:22, carb:4.3, fat:17.2}] },
+    { name: 'เนื้อหมูสันใน', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:143, protein:21, carb:1.5, fat:5.9}] },
+    { name: 'เนื้อวัว', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:250, protein:26, carb:3.7, fat:14.6}] },
+    { name: 'ปลาแซลมอน', cat: 'โปรตีน', units: [{u:'ชิ้น(100g)', cal:208, protein:20, carb:3.2, fat:12.8}] },
+    { name: 'ปลาทู', cat: 'โปรตีน', units: [{u:'ตัว', cal:180, protein:20, carb:2.5, fat:10}] },
+    { name: 'ปลานิลทอด', cat: 'โปรตีน', units: [{u:'ตัว', cal:280, protein:30, carb:4, fat:16}] },
+    { name: 'กุ้ง', cat: 'โปรตีน', units: [{u:'ตัว', cal:10, protein:2, carb:0.1, fat:0.2}, {u:'ขีด(100g)', cal:99, protein:24, carb:0.1, fat:0.3}] },
+    { name: 'ปลาหมึก', cat: 'โปรตีน', units: [{u:'ขีด(100g)', cal:92, protein:16, carb:0.7, fat:2.8}] },
+    { name: 'ทูน่ากระป๋อง', cat: 'โปรตีน', units: [{u:'กระป๋อง', cal:110, protein:25, carb:0.2, fat:1}] },
+    { name: 'เต้าหู้', cat: 'โปรตีน', units: [{u:'ก้อน', cal:80, protein:8, carb:1.2, fat:4.8}] },
+    { name: 'อกไก่ทอด', cat: 'โปรตีน', units: [{u:'ชิ้น', cal:220, protein:26, carb:2.9, fat:11.6}] },
 
     // === ผัก ===
-    { name: 'ผักบุ้งไฟแดง', cat: 'ผัก', units: [{u:'จาน', cal:120, protein:4}] },
-    { name: 'ผัดผักรวม', cat: 'ผัก', units: [{u:'จาน', cal:150, protein:5}] },
-    { name: 'ผัดคะน้า', cat: 'ผัก', units: [{u:'จาน', cal:140, protein:5}] },
-    { name: 'ผักลวก', cat: 'ผัก', units: [{u:'จาน', cal:40, protein:3}] },
-    { name: 'สลัดผัก', cat: 'ผัก', units: [{u:'จาน', cal:80, protein:3}] },
-    { name: 'บร็อคโคลี่', cat: 'ผัก', units: [{u:'ถ้วย', cal:55, protein:4}] },
-    { name: 'แตงกวา', cat: 'ผัก', units: [{u:'ลูก', cal:16, protein:0.7}] },
+    { name: 'ผักบุ้งไฟแดง', cat: 'ผัก', units: [{u:'จาน', cal:120, protein:4, carb:16.8, fat:4.1}] },
+    { name: 'ผัดผักรวม', cat: 'ผัก', units: [{u:'จาน', cal:150, protein:5, carb:21, fat:5.1}] },
+    { name: 'ผัดคะน้า', cat: 'ผัก', units: [{u:'จาน', cal:140, protein:5, carb:19.4, fat:4.7}] },
+    { name: 'ผักลวก', cat: 'ผัก', units: [{u:'จาน', cal:40, protein:3, carb:4.5, fat:1.1}] },
+    { name: 'สลัดผัก', cat: 'ผัก', units: [{u:'จาน', cal:80, protein:3, carb:11, fat:2.7}] },
+    { name: 'บร็อคโคลี่', cat: 'ผัก', units: [{u:'ถ้วย', cal:55, protein:4, carb:6.3, fat:1.5}] },
+    { name: 'แตงกวา', cat: 'ผัก', units: [{u:'ลูก', cal:16, protein:0.7, carb:2.1, fat:0.5}] },
 
     // === ผลไม้ ===
-    { name: 'กล้วยหอม', cat: 'ผลไม้', units: [{u:'ลูก', cal:105, protein:1.3}] },
-    { name: 'แอปเปิ้ล', cat: 'ผลไม้', units: [{u:'ลูก', cal:95, protein:0.5}] },
-    { name: 'ส้ม', cat: 'ผลไม้', units: [{u:'ลูก', cal:62, protein:1.2}] },
-    { name: 'มะม่วง', cat: 'ผลไม้', units: [{u:'ลูก', cal:200, protein:2.8}] },
-    { name: 'แตงโม', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:45, protein:0.9}] },
-    { name: 'สับปะรด', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:50, protein:0.5}] },
-    { name: 'องุ่น', cat: 'ผลไม้', units: [{u:'ลูก', cal:3, protein:0.03}, {u:'พวง', cal:90, protein:0.9}] },
-    { name: 'มะละกอ', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:60, protein:0.9}] },
+    { name: 'กล้วยหอม', cat: 'ผลไม้', units: [{u:'ลูก', cal:105, protein:1.3, carb:24.2, fat:0.3}] },
+    { name: 'แอปเปิ้ล', cat: 'ผลไม้', units: [{u:'ลูก', cal:95, protein:0.5, carb:22.5, fat:0.3}] },
+    { name: 'ส้ม', cat: 'ผลไม้', units: [{u:'ลูก', cal:62, protein:1.2, carb:13.9, fat:0.2}] },
+    { name: 'มะม่วง', cat: 'ผลไม้', units: [{u:'ลูก', cal:200, protein:2.8, carb:45.7, fat:0.7}] },
+    { name: 'แตงโม', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:45, protein:0.9, carb:10, fat:0.1}] },
+    { name: 'สับปะรด', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:50, protein:0.5, carb:11.6, fat:0.2}] },
+    { name: 'องุ่น', cat: 'ผลไม้', units: [{u:'ลูก', cal:3, protein:0.03, carb:0.7, fat:0}, {u:'พวง', cal:90, protein:0.9, carb:20.9, fat:0.3}] },
+    { name: 'มะละกอ', cat: 'ผลไม้', units: [{u:'ชิ้น', cal:60, protein:0.9, carb:13.7, fat:0.2}] },
 
     // === ของทานเล่น/ขนม ===
-    { name: 'ไก่ทอด KFC', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:290, protein:19}] },
-    { name: 'เฟรนช์ฟรายส์', cat: 'ของทานเล่น', units: [{u:'จาน', cal:365, protein:4}] },
-    { name: 'ลูกชิ้นปิ้ง', cat: 'ของทานเล่น', units: [{u:'ไม้', cal:80, protein:5}] },
-    { name: 'ปาท่องโก๋', cat: 'ของทานเล่น', units: [{u:'ตัว', cal:75, protein:1.5}] },
-    { name: 'ซาลาเปา', cat: 'ของทานเล่น', units: [{u:'ลูก', cal:180, protein:6}] },
-    { name: 'ขนมจีบ', cat: 'ของทานเล่น', units: [{u:'ลูก', cal:35, protein:2}] },
-    { name: 'เกี๊ยวทอด', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:45, protein:1.5}] },
-    { name: 'มันฝรั่งทอด(ถุง)', cat: 'ของทานเล่น', units: [{u:'ถุงเล็ก', cal:150, protein:2}] },
-    { name: 'โดนัท', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:250, protein:3}] },
-    { name: 'ไอศกรีม', cat: 'ของทานเล่น', units: [{u:'สกู๊ป', cal:140, protein:2.5}] },
+    { name: 'ไก่ทอด KFC', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:290, protein:19, carb:26.8, fat:11.9}] },
+    { name: 'เฟรนช์ฟรายส์', cat: 'ของทานเล่น', units: [{u:'จาน', cal:365, protein:4, carb:43.6, fat:19.4}] },
+    { name: 'ลูกชิ้นปิ้ง', cat: 'ของทานเล่น', units: [{u:'ไม้', cal:80, protein:5, carb:7.5, fat:3.3}] },
+    { name: 'ปาท่องโก๋', cat: 'ของทานเล่น', units: [{u:'ตัว', cal:75, protein:1.5, carb:8.6, fat:3.8}] },
+    { name: 'ซาลาเปา', cat: 'ของทานเล่น', units: [{u:'ลูก', cal:180, protein:6, carb:19.5, fat:8.7}] },
+    { name: 'ขนมจีบ', cat: 'ของทานเล่น', units: [{u:'ลูก', cal:35, protein:2, carb:3.4, fat:1.5}] },
+    { name: 'เกี๊ยวทอด', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:45, protein:1.5, carb:4.9, fat:2.2}] },
+    { name: 'มันฝรั่งทอด(ถุง)', cat: 'ของทานเล่น', units: [{u:'ถุงเล็ก', cal:150, protein:2, carb:17.8, fat:7.9}] },
+    { name: 'โดนัท', cat: 'ของทานเล่น', units: [{u:'ชิ้น', cal:250, protein:3, carb:29.8, fat:13.2}] },
+    { name: 'ไอศกรีม', cat: 'ของทานเล่น', units: [{u:'สกู๊ป', cal:140, protein:2.5, carb:16.2, fat:7.2}] },
 
     // === ฟาสต์ฟู้ด ===
-    { name: 'พิซซ่า', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:285, protein:12}] },
-    { name: 'แฮมเบอร์เกอร์', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:350, protein:16}] },
-    { name: 'เบอร์เกอร์ไก่', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:400, protein:20}] },
-    { name: 'ฮอทด็อก', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:290, protein:10}] },
-    { name: 'แซนด์วิช', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:300, protein:12}] },
+    { name: 'พิซซ่า', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:285, protein:12, carb:28.9, fat:13.5}] },
+    { name: 'แฮมเบอร์เกอร์', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:350, protein:16, carb:34.9, fat:16.3}] },
+    { name: 'เบอร์เกอร์ไก่', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:400, protein:20, carb:39, fat:18.2}] },
+    { name: 'ฮอทด็อก', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:290, protein:10, carb:30.5, fat:14.2}] },
+    { name: 'แซนด์วิช', cat: 'ฟาสต์ฟู้ด', units: [{u:'ชิ้น', cal:300, protein:12, carb:30.7, fat:14.3}] },
 
     // === เครื่องดื่ม ===
-    { name: 'นมสด', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:120, protein:8}, {u:'กล่อง', cal:150, protein:10}] },
-    { name: 'นมถั่วเหลือง', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:100, protein:7}] },
-    { name: 'โยเกิร์ต', cat: 'เครื่องดื่ม', units: [{u:'ถ้วย', cal:100, protein:6}] },
-    { name: 'ชาเย็น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:180, protein:2}] },
-    { name: 'กาแฟเย็น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:200, protein:3}] },
-    { name: 'ชานมไข่มุก', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:280, protein:3}] },
-    { name: 'น้ำอัดลม', cat: 'เครื่องดื่ม', units: [{u:'กระป๋อง', cal:140, protein:0}, {u:'แก้ว', cal:100, protein:0}] },
-    { name: 'น้ำส้มคั้น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:110, protein:2}] },
-    { name: 'เวย์โปรตีน', cat: 'เครื่องดื่ม', units: [{u:'สกู๊ป', cal:120, protein:24}] },
-    { name: 'น้ำเปล่า', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:0, protein:0}] },
+    { name: 'นมสด', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:120, protein:8, carb:18.3, fat:1.6}, {u:'กล่อง', cal:150, protein:10, carb:22.9, fat:2}] },
+    { name: 'นมถั่วเหลือง', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:100, protein:7, carb:15, fat:1.3}] },
+    { name: 'โยเกิร์ต', cat: 'เครื่องดื่ม', units: [{u:'ถ้วย', cal:100, protein:6, carb:15.8, fat:1.4}] },
+    { name: 'ชาเย็น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:180, protein:2, carb:35.8, fat:3.2}] },
+    { name: 'กาแฟเย็น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:200, protein:3, carb:39.2, fat:3.5}] },
+    { name: 'ชานมไข่มุก', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:280, protein:3, carb:55.8, fat:5}] },
+    { name: 'น้ำอัดลม', cat: 'เครื่องดื่ม', units: [{u:'กระป๋อง', cal:140, protein:0, carb:29.2, fat:2.6}, {u:'แก้ว', cal:100, protein:0, carb:20.8, fat:1.9}] },
+    { name: 'น้ำส้มคั้น', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:110, protein:2, carb:21.2, fat:1.9}] },
+    { name: 'เวย์โปรตีน', cat: 'เครื่องดื่ม', units: [{u:'สกู๊ป', cal:120, protein:24, carb:5, fat:0.4}] },
+    { name: 'น้ำเปล่า', cat: 'เครื่องดื่ม', units: [{u:'แก้ว', cal:0, protein:0, carb:0, fat:0}] },
 ];
 
         let currentDate = new Date().toISOString().split('T')[0];
@@ -502,7 +512,8 @@
             const fav = {
                 id: Date.now().toString(),
                 foodName: f.foodName, unit: f.unit, quantity: f.quantity,
-                totalCal: f.totalCal, totalProtein: f.totalProtein
+                totalCal: f.totalCal, totalProtein: f.totalProtein,
+                totalCarb: f.totalCarb || 0, totalFat: f.totalFat || 0
             };
             database.ref('users/' + currentUid + '/favorites/' + fav.id).set(fav);
         }
@@ -517,6 +528,7 @@
                 id: Date.now().toString(),
                 foodName: fav.foodName, unit: fav.unit, quantity: fav.quantity,
                 totalCal: fav.totalCal, totalProtein: fav.totalProtein,
+                totalCarb: fav.totalCarb || 0, totalFat: fav.totalFat || 0,
                 time: String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0'),
                 date: currentDate
             };
@@ -661,10 +673,15 @@
             todayFoods.sort((a, b) => (a.time || '00:00').localeCompare(b.time || '00:00'));
             const totalCal = todayFoods.reduce((s, f) => s + f.totalCal, 0);
             const totalProtein = Math.round(todayFoods.reduce((s, f) => s + f.totalProtein, 0) * 10) / 10;
+            const totalCarb = Math.round(todayFoods.reduce((s, f) => s + (f.totalCarb || 0), 0) * 10) / 10;
+            const totalFat = Math.round(todayFoods.reduce((s, f) => s + (f.totalFat || 0), 0) * 10) / 10;
             const calGoal = parseInt(document.getElementById('calGoal').value);
             const goal = parseInt(document.getElementById('proteinGoal').value);
             document.getElementById('totalCal').textContent = totalCal;
             document.getElementById('totalProtein').textContent = totalProtein;
+            document.getElementById('mProtein').textContent = totalProtein;
+            document.getElementById('mCarb').textContent = totalCarb;
+            document.getElementById('mFat').textContent = totalFat;
             document.getElementById('calGoalDisplay').textContent = calGoal;
             document.getElementById('proteinGoalDisplay').textContent = goal;
             document.getElementById('calBar').style.width = Math.min(100, Math.round((totalCal/calGoal)*100)) + '%';
@@ -681,7 +698,7 @@
                     '<div class="log-item"><div>' +
                     '<div class="log-name">' + f.foodName + '</div>' +
                     '<div class="log-qty">' + f.quantity + ' ' + f.unit + ' <span style="color:#ff69b4;font-weight:500;">🕐 ' + f.time + '</span></div>' +
-                    '<div class="log-nutrition">' + f.totalCal + ' cal | ' + f.totalProtein + 'g protein</div>' +
+                    '<div class="log-nutrition">' + f.totalCal + ' cal | ' + f.totalProtein + 'g P' + ((f.totalCarb||f.totalFat) ? ' | ' + (f.totalCarb||0) + 'g C | ' + (f.totalFat||0) + 'g F' : '') + '</div>' +
                     '</div><div style="display:flex; flex-direction:column; gap:0.35rem; margin-left:1rem;">' +
                     '<button onclick="saveFavorite(\'' + f.id + '\')" title="บันทึกเป็นมื้อโปรด" style="background:rgba(255,220,150,0.4); padding:0.4rem 0.6rem; font-size:12px;">⭐</button>' +
                     '<button class="btn-delete" style="margin-left:0;" onclick="removeFood(\'' + f.id + '\')">ลบ</button>' +
@@ -734,7 +751,7 @@
             if (!selectedFood) return;
             const u = selectedFood.units[parseInt(document.getElementById('unitSelect').value)];
             const qty = parseFloat(document.getElementById('servingSize').value) || 0;
-            document.getElementById('previewInfo').textContent = 'รวม: ' + Math.round(u.cal*qty) + ' cal | ' + (Math.round(u.protein*qty*10)/10) + 'g protein';
+            document.getElementById('previewInfo').innerHTML = 'รวม: ' + Math.round(u.cal*qty) + ' cal | ' + (Math.round(u.protein*qty*10)/10) + 'g P | ' + (Math.round((u.carb||0)*qty*10)/10) + 'g C | ' + (Math.round((u.fat||0)*qty*10)/10) + 'g F';
         }
         function addFoodToToday() {
             if (!selectedFood) return;
@@ -743,6 +760,7 @@
             const food = {
                 id: Date.now().toString(), foodName: selectedFood.name, unit: u.u, quantity: qty,
                 totalCal: Math.round(u.cal*qty), totalProtein: Math.round(u.protein*qty*10)/10,
+                totalCarb: Math.round((u.carb||0)*qty*10)/10, totalFat: Math.round((u.fat||0)*qty*10)/10,
                 time: document.getElementById('mealTime').value || new Date().toTimeString().slice(0,5), date: currentDate
             };
             saveFoodToFirebase(food);
@@ -762,14 +780,17 @@
             const unit = document.getElementById('customUnit').value.trim() || 'จาน';
             const cal = parseFloat(document.getElementById('customCal').value);
             const protein = parseFloat(document.getElementById('customProtein').value) || 0;
+            const carb = parseFloat(document.getElementById('customCarb').value) || 0;
+            const fat = parseFloat(document.getElementById('customFat').value) || 0;
             if (!name || isNaN(cal)) { alert('กรุณาใส่ชื่อและแคลโลรี่'); return; }
             const food = {
                 id: Date.now().toString(), foodName: name, unit: unit, quantity: 1,
                 totalCal: Math.round(cal), totalProtein: Math.round(protein*10)/10,
+                totalCarb: Math.round(carb*10)/10, totalFat: Math.round(fat*10)/10,
                 time: document.getElementById('customTime').value || new Date().toTimeString().slice(0,5), date: currentDate
             };
             saveFoodToFirebase(food);
-            ['customName','customUnit','customCal','customProtein'].forEach(id => document.getElementById(id).value = '');
+            ['customName','customUnit','customCal','customProtein','customCarb','customFat'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('customFoodPanel').classList.add('hidden');
         }
 
