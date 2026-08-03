@@ -62,7 +62,8 @@
         .auth-toggle { text-align: center; margin-top: 1rem; font-size: 13px; color: #888; }
         .auth-toggle a { color: #b088c9; cursor: pointer; text-decoration: underline; }
         .auth-error { color: #c00; font-size: 13px; margin-bottom: 0.75rem; min-height: 18px; }
-        .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .view-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .view-tab { flex: 1 0 auto; white-space: nowrap; }
         .view-tab { flex: 1; padding: 0.7rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 14px; cursor: pointer; font-weight: 500; }
         .view-tab.active { background: linear-gradient(135deg, rgba(176,224,230,0.5), rgba(200,200,255,0.4)); }
         .chart-box { background: #fafafa; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(200,200,200,0.2); }
@@ -102,6 +103,7 @@
                 <div class="view-tab active" id="tab-today" onclick="switchView('today')">📝 วันนี้</div>
                 <div class="view-tab" id="tab-stats" onclick="switchView('stats')">📈 สถิติ</div>
                 <div class="view-tab" id="tab-weight" onclick="switchView('weight')">⚖️ น้ำหนัก</div>
+                <div class="view-tab" id="tab-profile" onclick="switchView('profile')">🧮 โปรไฟล์</div>
             </div>
 
             <!-- ===== TODAY VIEW ===== -->
@@ -164,14 +166,9 @@
                     <div class="log-name" style="margin-bottom:0.75rem;">📷 ส่องบาร์โค้ดให้อยู่ในกรอบ</div>
                     <video id="scanVideo" style="width:100%; max-width:100%; border-radius:12px; background:#000;" playsinline></video>
                     <div class="food-info" id="scanStatus" style="margin-top:0.5rem;">กำลังเปิดกล้อง...</div>
-                    <div id="zoomControls" class="hidden" style="display:flex; align-items:center; justify-content:center; gap:0.75rem; margin-top:0.75rem;">
-                        <button onclick="changeZoom(-1)" style="font-size:18px; padding:0.4rem 1rem;">➖</button>
-                        <span class="food-info" id="zoomLabel">ซูม 1.0x</span>
-                        <button onclick="changeZoom(1)" style="font-size:18px; padding:0.4rem 1rem;">➕</button>
-                    </div>
-                    <div class="food-info" style="margin-top:0.5rem; font-size:11px;">เคล็ดลับ: อยู่ระยะที่ภาพชัด แล้วกด ➕ ซูมเข้าหาบาร์โค้ด แทนการขยับเข้าใกล้</div>
+                    <div class="food-info" style="margin-top:0.5rem; font-size:11px;">เคล็ดลับ: ถือระยะที่ภาพ<b>ชัด</b> (ไม่ต้องจ่อใกล้) ให้บาร์โค้ดตรงและได้แสงพอ<br>ถ้าสแกนไม่ติด พิมพ์เลขใต้บาร์โค้ดด้านล่างได้เลย</div>
                     <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
-                        <input type="text" id="manualBarcode" placeholder="หรือพิมพ์เลขบาร์โค้ด" inputmode="numeric" style="margin-bottom:0;">
+                        <input type="text" id="manualBarcode" placeholder="พิมพ์เลขบาร์โค้ด" inputmode="numeric" style="margin-bottom:0;">
                         <button onclick="submitManualBarcode()" style="white-space:nowrap;">ค้นหา</button>
                     </div>
                     <button onclick="stopScan()" style="margin-top:0.75rem;">ยกเลิก</button>
@@ -295,6 +292,61 @@
 
                 <div id="weightHistory"></div>
                 <div id="weightEmpty" class="empty-state hidden">ยังไม่มีบันทึกน้ำหนัก เริ่มบันทึกวันนี้เลย ⚖️</div>
+            </div>
+
+            <!-- ===== PROFILE VIEW ===== -->
+            <div id="profileView" class="hidden">
+                <div class="header-gradient">
+                    <h1>🧮 โปรไฟล์ & เป้าหมาย</h1>
+                    <div class="subtitle">คำนวณแคลที่ควรกินจากตัวคุณจริง</div>
+                </div>
+
+                <div class="card">
+                    <label>เพศ</label>
+                    <select id="pfSex">
+                        <option value="male">ชาย</option>
+                        <option value="female">หญิง</option>
+                    </select>
+                    <label>อายุ (ปี)</label>
+                    <input type="number" id="pfAge" placeholder="เช่น 30" min="1" max="120">
+                    <label>ส่วนสูง (cm)</label>
+                    <input type="number" id="pfHeight" placeholder="เช่น 170" min="50" max="250">
+                    <label>น้ำหนัก (kg)</label>
+                    <input type="number" id="pfWeight" placeholder="เช่น 65" step="0.1" min="0">
+                    <label>ระดับกิจกรรม</label>
+                    <select id="pfActivity">
+                        <option value="1.2">นั่งทำงานเป็นหลัก ไม่ค่อยออกกำลัง</option>
+                        <option value="1.375">ออกกำลังเบา 1-3 วัน/สัปดาห์</option>
+                        <option value="1.55" selected>ออกกำลังปานกลาง 3-5 วัน/สัปดาห์</option>
+                        <option value="1.725">ออกกำลังหนัก 6-7 วัน/สัปดาห์</option>
+                        <option value="1.9">ออกกำลังหนักมาก / งานใช้แรง</option>
+                    </select>
+                    <label>เป้าหมาย</label>
+                    <select id="pfGoal">
+                        <option value="lose">ลดน้ำหนัก (ลด ~500 แคล/วัน)</option>
+                        <option value="maintain" selected>คงน้ำหนัก</option>
+                        <option value="gain">เพิ่มกล้าม (เพิ่ม ~300 แคล/วัน)</option>
+                    </select>
+                    <button class="btn-primary" onclick="calculateProfile()">🧮 คำนวณเป้าหมาย</button>
+                </div>
+
+                <div id="profileResult" class="hidden">
+                    <div class="summary-row">
+                        <div class="summary-box"><div class="summary-val" id="resBMI">-</div><div class="summary-lbl">BMI</div></div>
+                        <div class="summary-box"><div class="summary-val" id="resBMR">-</div><div class="summary-lbl">BMR</div></div>
+                        <div class="summary-box"><div class="summary-val" id="resTDEE">-</div><div class="summary-lbl">TDEE</div></div>
+                    </div>
+                    <div class="card" style="background:rgba(200,230,201,0.2);">
+                        <div id="bmiNote" class="food-info" style="margin-bottom:0.75rem;"></div>
+                        <div style="font-size:15px; color:#333; margin-bottom:0.5rem;">🎯 เป้าหมายแนะนำต่อวัน</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+                            <div class="summary-box" style="background:rgba(255,200,124,0.2);"><div class="summary-val" id="resCal">-</div><div class="summary-lbl">แคล</div></div>
+                            <div class="summary-box" style="background:rgba(255,182,193,0.2);"><div class="summary-val" id="resProtein">-</div><div class="summary-lbl">โปรตีน (g)</div></div>
+                        </div>
+                        <button class="btn-primary" onclick="applyProfileGoals()">✅ ใช้ค่านี้เป็นเป้าหมาย</button>
+                        <div class="food-info" style="margin-top:0.75rem; font-size:11px;">ℹ️ ค่าเหล่านี้เป็นค่าประมาณจากสูตรมาตรฐาน (Mifflin-St Jeor) ใช้เป็นจุดตั้งต้น ปรับตามผลจริงได้</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -507,6 +559,7 @@
                 document.getElementById('passwordInput').value = '';
                 loadSettings();
                 loadUserData();
+                loadProfile();
                 init();
             } else {
                 currentUid = null; foods = [];
@@ -696,11 +749,96 @@
             document.getElementById('tab-today').classList.toggle('active', view === 'today');
             document.getElementById('tab-stats').classList.toggle('active', view === 'stats');
             document.getElementById('tab-weight').classList.toggle('active', view === 'weight');
+            document.getElementById('tab-profile').classList.toggle('active', view === 'profile');
             document.getElementById('todayView').classList.toggle('hidden', view !== 'today');
             document.getElementById('statsView').classList.toggle('hidden', view !== 'stats');
             document.getElementById('weightView').classList.toggle('hidden', view !== 'weight');
+            document.getElementById('profileView').classList.toggle('hidden', view !== 'profile');
             if (view === 'stats') renderStats();
             if (view === 'weight') renderWeight();
+        }
+
+        // ===== PROFILE / TDEE =====
+        let lastCalc = null;
+
+        function calculateProfile() {
+            const sex = document.getElementById('pfSex').value;
+            const age = parseFloat(document.getElementById('pfAge').value);
+            const height = parseFloat(document.getElementById('pfHeight').value);
+            const weight = parseFloat(document.getElementById('pfWeight').value);
+            const activity = parseFloat(document.getElementById('pfActivity').value);
+            const goal = document.getElementById('pfGoal').value;
+
+            if (isNaN(age) || isNaN(height) || isNaN(weight) || age <= 0 || height <= 0 || weight <= 0) {
+                alert('กรุณากรอกอายุ ส่วนสูง และน้ำหนักให้ครบ');
+                return;
+            }
+
+            // BMR - Mifflin-St Jeor
+            let bmr = 10 * weight + 6.25 * height - 5 * age + (sex === 'male' ? 5 : -161);
+            const tdee = bmr * activity;
+
+            // ปรับตามเป้าหมาย
+            let calGoal = tdee;
+            if (goal === 'lose') calGoal = tdee - 500;
+            else if (goal === 'gain') calGoal = tdee + 300;
+            calGoal = Math.round(calGoal / 10) * 10; // ปัดเป็นหลักสิบ
+
+            // โปรตีน: 1.6 g/kg (คงน้ำหนัก), 1.8 (ลด - รักษากล้าม), 2.0 (เพิ่มกล้าม)
+            let proteinPerKg = 1.6;
+            if (goal === 'lose') proteinPerKg = 1.8;
+            else if (goal === 'gain') proteinPerKg = 2.0;
+            const proteinGoal = Math.round(weight * proteinPerKg);
+
+            // BMI
+            const heightM = height / 100;
+            const bmi = weight / (heightM * heightM);
+            let bmiCat = '';
+            if (bmi < 18.5) bmiCat = 'น้ำหนักน้อย';
+            else if (bmi < 23) bmiCat = 'ปกติ';
+            else if (bmi < 25) bmiCat = 'ท้วม';
+            else if (bmi < 30) bmiCat = 'อ้วนระดับ 1';
+            else bmiCat = 'อ้วนระดับ 2';
+
+            document.getElementById('resBMI').textContent = bmi.toFixed(1);
+            document.getElementById('resBMR').textContent = Math.round(bmr);
+            document.getElementById('resTDEE').textContent = Math.round(tdee);
+            document.getElementById('resCal').textContent = calGoal;
+            document.getElementById('resProtein').textContent = proteinGoal;
+            document.getElementById('bmiNote').innerHTML = 'BMI ของคุณ = <b>' + bmi.toFixed(1) + '</b> (' + bmiCat + ') — เกณฑ์ปกติสำหรับคนเอเชียคือ 18.5–22.9';
+            document.getElementById('profileResult').classList.remove('hidden');
+
+            lastCalc = { sex, age, height, weight, activity, goal, calGoal, proteinGoal };
+            // บันทึกโปรไฟล์
+            database.ref('users/' + currentUid + '/profile').set({ sex, age, height, weight, activity, goal });
+        }
+
+        function applyProfileGoals() {
+            if (!lastCalc) return;
+            document.getElementById('calGoal').value = lastCalc.calGoal;
+            document.getElementById('proteinGoal').value = lastCalc.proteinGoal;
+            // sync กับ goal-tab ในหน้าวันนี้
+            currentGoal = lastCalc.goal;
+            document.querySelectorAll('.goal-tab').forEach(t => t.classList.remove('active'));
+            const gt = document.getElementById('goal-' + lastCalc.goal);
+            if (gt) gt.classList.add('active');
+            saveSettings();
+            alert('ตั้งเป้าหมายเรียบร้อย!\nแคล: ' + lastCalc.calGoal + ' | โปรตีน: ' + lastCalc.proteinGoal + 'g\n\nดูได้ในแท็บ "วันนี้"');
+            switchView('today');
+        }
+
+        function loadProfile() {
+            database.ref('users/' + currentUid + '/profile').once('value', (snap) => {
+                const p = snap.val();
+                if (p) {
+                    if (p.sex) document.getElementById('pfSex').value = p.sex;
+                    if (p.age) document.getElementById('pfAge').value = p.age;
+                    if (p.height) document.getElementById('pfHeight').value = p.height;
+                    if (p.weight) document.getElementById('pfWeight').value = p.weight;
+                    if (p.activity) document.getElementById('pfActivity').value = p.activity;
+                    if (p.goal) document.getElementById('pfGoal').value = p.goal;
+                }
+            });
         }
 
         // ===== TODAY DISPLAY =====
@@ -934,9 +1072,6 @@
         let scanData = null;
 
         let scanStream = null;
-        let scanTrack = null;
-        let zoomCap = null;   // {min,max,step}
-        let curZoom = 1;
 
         async function startScan() {
             if (typeof ZXing === 'undefined') {
@@ -948,7 +1083,6 @@
             document.getElementById('customFoodPanel').classList.add('hidden');
             document.getElementById('scanResultPanel').classList.add('hidden');
             document.getElementById('scanPanel').classList.remove('hidden');
-            document.getElementById('zoomControls').classList.add('hidden');
             document.getElementById('scanStatus').textContent = 'กำลังเปิดกล้อง...';
 
             try {
@@ -969,52 +1103,13 @@
                     }
                 });
                 scanStream = videoEl.srcObject;
-                setupZoom();
-                document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดให้ชัด แล้วกด ➕ ซูมเข้าหา';
+                document.getElementById('scanStatus').textContent = 'ส่องบาร์โค้ดที่ระยะภาพชัด...';
             } catch (e) {
                 document.getElementById('scanStatus').textContent = 'เปิดกล้องไม่ได้: ' + (e.message || e);
                 setTimeout(() => {
                     alert('เปิดกล้องไม่ได้ อาจยังไม่อนุญาตสิทธิ์กล้อง\n\nลองพิมพ์เลขบาร์โค้ดเองด้านล่างได้');
                 }, 100);
             }
-        }
-
-        function setupZoom() {
-            if (!scanStream) return;
-            scanTrack = scanStream.getVideoTracks()[0];
-            if (!scanTrack || !scanTrack.getCapabilities) return;
-            try {
-                const caps = scanTrack.getCapabilities();
-                if (caps.zoom && caps.zoom.max > caps.zoom.min) {
-                    // แบ่งช่วงซูมเป็น 10 ขั้นเท่าๆ กัน (ไม่พึ่ง step จากกล้องที่บางเครื่องเป็น 0)
-                    const range = caps.zoom.max - caps.zoom.min;
-                    zoomCap = { min: caps.zoom.min, max: caps.zoom.max, step: range / 10 };
-                    const settings = scanTrack.getSettings();
-                    curZoom = settings.zoom || zoomCap.min || 1;
-                    document.getElementById('zoomControls').classList.remove('hidden');
-                    updateZoomLabel();
-                } else {
-                    document.getElementById('zoomControls').classList.add('hidden');
-                }
-            } catch (e) {
-                document.getElementById('zoomControls').classList.add('hidden');
-            }
-        }
-
-        function changeZoom(dir) {
-            if (!scanTrack || !zoomCap) return;
-            // ก้าวซูม: ใช้ step ที่คำนวณเอง กันกรณี step เป็น 0
-            let step = zoomCap.step;
-            if (!step || step <= 0) step = (zoomCap.max - zoomCap.min) / 10 || 0.5;
-            curZoom = Math.min(zoomCap.max, Math.max(zoomCap.min, curZoom + dir * step));
-            try {
-                scanTrack.applyConstraints({ advanced: [{ zoom: curZoom }] });
-            } catch (e) {}
-            updateZoomLabel();
-        }
-
-        function updateZoomLabel() {
-            document.getElementById('zoomLabel').textContent = 'ซูม ' + curZoom.toFixed(1) + 'x';
         }
 
         function submitManualBarcode() {
@@ -1029,7 +1124,7 @@
                 try { codeReader.reset(); } catch (e) {}
                 codeReader = null;
             }
-            scanStream = null; scanTrack = null; zoomCap = null; curZoom = 1;
+            scanStream = null;
             document.getElementById('manualBarcode').value = '';
             document.getElementById('scanPanel').classList.add('hidden');
         }
