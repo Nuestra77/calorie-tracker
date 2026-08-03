@@ -154,6 +154,30 @@
                     <div class="summary-box" style="background:rgba(255,220,150,0.2);"><div class="summary-val" id="mFat">0</div><div class="summary-lbl">ไขมัน (g)</div></div>
                 </div>
 
+                <div class="card" style="background:rgba(176,224,230,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.75rem;">
+                        <span style="font-size:15px; font-weight:600; color:#333;">💧 น้ำวันนี้</span>
+                        <span class="food-info"><span id="waterCount">0</span> / 8 แก้ว (<span id="waterMl">0</span> ml)</span>
+                    </div>
+                    <div class="progress-bar" style="background:rgba(130,177,255,0.15);"><div class="progress-fill" id="waterBar" style="width:0%; background:linear-gradient(90deg, rgba(130,177,255,0.7), rgba(100,150,255,1));"></div></div>
+                    <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                        <button onclick="changeWater(1)" class="btn-primary" style="margin-top:0; flex:2;">➕ เพิ่ม 1 แก้ว (250ml)</button>
+                        <button onclick="changeWater(-1)" style="flex:1;">➖ ลด</button>
+                    </div>
+                </div>
+
+                <div class="card" style="background:rgba(200,230,201,0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                        <span style="font-size:15px; font-weight:600; color:#333;">🏃 ก้าวเดินวันนี้</span>
+                        <span class="food-info" id="stepBurn">เผา 0 แคล</span>
+                    </div>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="number" id="stepInput" placeholder="กรอกจำนวนก้าว เช่น 8000" inputmode="numeric" style="margin-bottom:0;">
+                        <button onclick="saveSteps()" style="white-space:nowrap;">บันทึก</button>
+                    </div>
+                    <div class="food-info" id="stepNote" style="margin-top:0.5rem; font-size:11px;">ดูจำนวนก้าวจากแอปสุขภาพในมือถือแล้วกรอกมา</div>
+                </div>
+
                 <div class="card">
                     <label>🍽️ ค้นหาอาหาร</label>
                     <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร เช่น ข้าวมันไก่, ส้มตำ..." oninput="filterFoods()" style="margin-bottom:0.75rem;">
@@ -507,6 +531,8 @@
         let favorites = [];
         let weights = [];
         let weightChartObj = null;
+        let waterByDate = {};   // { 'YYYY-MM-DD': จำนวนแก้ว }
+        let stepsByDate = {};   // { 'YYYY-MM-DD': จำนวนก้าว }
 
         // ===== AUTH =====
         function toggleAuthMode() {
@@ -587,9 +613,68 @@
                 weights.sort((a, b) => a.date.localeCompare(b.date));
                 if (!document.getElementById('weightView').classList.contains('hidden')) renderWeight();
             });
+            database.ref('users/' + currentUid + '/water').on('value', (snapshot) => {
+                waterByDate = snapshot.val() || {};
+                updateWaterDisplay();
+            });
+            database.ref('users/' + currentUid + '/steps').on('value', (snapshot) => {
+                stepsByDate = snapshot.val() || {};
+                updateStepDisplay();
+                updateDisplay();
+            });
         }
         function saveFoodToFirebase(food) { database.ref('users/' + currentUid + '/foods/' + food.id).set(food); }
         function removeFood(id) { database.ref('users/' + currentUid + '/foods/' + id).remove(); }
+
+        // ===== WATER =====
+        function dateKey(d) { return d.replace(/-/g, ''); }
+        function changeWater(delta) {
+            const k = dateKey(currentDate);
+            const cur = (waterByDate[k] || 0) + delta;
+            const val = Math.max(0, cur);
+            database.ref('users/' + currentUid + '/water/' + k).set(val);
+        }
+        function updateWaterDisplay() {
+            const k = dateKey(currentDate);
+            const cups = waterByDate[k] || 0;
+            const el = document.getElementById('waterCount');
+            if (!el) return;
+            el.textContent = cups;
+            document.getElementById('waterMl').textContent = cups * 250;
+            document.getElementById('waterBar').style.width = Math.min(100, Math.round((cups / 8) * 100)) + '%';
+        }
+
+        // ===== STEPS =====
+        function getUserWeight() {
+            // ใช้น้ำหนักจากโปรไฟล์ ถ้าไม่มีใช้ 65 เป็นค่ากลาง
+            const w = parseFloat((document.getElementById('pfWeight') || {}).value);
+            return (!isNaN(w) && w > 0) ? w : 65;
+        }
+        function stepsBurn(steps) {
+            // ~0.04 แคล ต่อก้าว ต่อน้ำหนักตัว 1 กก. (คนหนักกว่าเผามากกว่า)
+            return Math.round(steps * 0.04 * (getUserWeight() / 65));
+        }
+        function saveSteps() {
+            const v = parseInt(document.getElementById('stepInput').value);
+            if (isNaN(v) || v < 0) { alert('กรุณากรอกจำนวนก้าว'); return; }
+            const k = dateKey(currentDate);
+            database.ref('users/' + currentUid + '/steps/' + k).set(v);
+            document.getElementById('stepInput').value = '';
+        }
+        function updateStepDisplay() {
+            const k = dateKey(currentDate);
+            const steps = stepsByDate[k] || 0;
+            const el = document.getElementById('stepBurn');
+            if (!el) return;
+            const burn = stepsBurn(steps);
+            el.textContent = steps > 0 ? (steps.toLocaleString() + ' ก้าว · เผา ' + burn + ' แคล') : 'เผา 0 แคล';
+            const noteEl = document.getElementById('stepNote');
+            if (steps > 0) {
+                noteEl.innerHTML = '🔥 เดิน ' + steps.toLocaleString() + ' ก้าว เผาไปประมาณ <b>' + burn + ' แคล</b> (แคลสุทธิวันนี้ = กิน − เผา)';
+            } else {
+                noteEl.textContent = 'ดูจำนวนก้าวจากแอปสุขภาพในมือถือแล้วกรอกมา';
+            }
+        }
 
         // ===== FAVORITES (มื้อโปรด/กินซ้ำ) =====
         function saveFavorite(logId) {
@@ -860,25 +945,61 @@
             document.getElementById('proteinGoalDisplay').textContent = goal;
             document.getElementById('calBar').style.width = Math.min(100, Math.round((totalCal/calGoal)*100)) + '%';
             document.getElementById('progressBar').style.width = Math.min(100, Math.round((totalProtein/goal)*100)) + '%';
-            const calLeft = calGoal - totalCal;
-            document.getElementById('calText').textContent = calLeft >= 0 ? ('เหลือ ' + calLeft + ' แคล') : ('เกิน ' + Math.abs(calLeft) + ' แคล ⚠️');
+            // แคลสุทธิ = กิน - เผาจากก้าว
+            const burnedToday = stepsBurn(stepsByDate[dateKey(currentDate)] || 0);
+            const netCal = totalCal - burnedToday;
+            const calLeft = calGoal - netCal;
+            let calMsg = calLeft >= 0 ? ('เหลือ ' + calLeft + ' แคล') : ('เกิน ' + Math.abs(calLeft) + ' แคล ⚠️');
+            if (burnedToday > 0) calMsg += ' (สุทธิ ' + netCal + ' = กิน ' + totalCal + ' − เผา ' + burnedToday + ')';
+            document.getElementById('calText').textContent = calMsg;
             document.getElementById('progressText').textContent = totalProtein >= goal ? '✅ ครบเป้าหมายโปรตีน!' : ('ยังขาด ' + (Math.round((goal-totalProtein)*10)/10) + 'g โปรตีน');
             const logList = document.getElementById('foodLogList');
             const logPanel = document.getElementById('foodLogPanel');
             const emptyState = document.getElementById('emptyState');
             if (todayFoods.length > 0) {
                 logPanel.classList.remove('hidden'); emptyState.classList.add('hidden');
-                logList.innerHTML = todayFoods.map(f =>
-                    '<div class="log-item"><div>' +
-                    '<div class="log-name">' + f.foodName + '</div>' +
-                    '<div class="log-qty">' + f.quantity + ' ' + f.unit + ' <span style="color:#ff69b4;font-weight:500;">🕐 ' + f.time + '</span></div>' +
-                    '<div class="log-nutrition">' + f.totalCal + ' cal | ' + f.totalProtein + 'g P' + ((f.totalCarb||f.totalFat) ? ' | ' + (f.totalCarb||0) + 'g C | ' + (f.totalFat||0) + 'g F' : '') + '</div>' +
-                    '</div><div style="display:flex; flex-direction:column; gap:0.35rem; margin-left:1rem;">' +
-                    '<button onclick="saveFavorite(\'' + f.id + '\')" title="บันทึกเป็นมื้อโปรด" style="background:rgba(255,220,150,0.4); padding:0.4rem 0.6rem; font-size:12px;">⭐</button>' +
-                    '<button class="btn-delete" style="margin-left:0;" onclick="removeFood(\'' + f.id + '\')">ลบ</button>' +
-                    '</div></div>'
-                ).join('');
+                // จัดกลุ่มตามมื้อ (auto-detect จากเวลา)
+                const meals = [
+                    { key: 'breakfast', label: '🌅 มื้อเช้า', items: [] },
+                    { key: 'lunch', label: '☀️ มื้อกลางวัน', items: [] },
+                    { key: 'dinner', label: '🌙 มื้อเย็น', items: [] },
+                    { key: 'snack', label: '🍪 ของว่าง', items: [] }
+                ];
+                todayFoods.forEach(f => {
+                    const m = mealFromTime(f.time);
+                    (meals.find(x => x.key === m) || meals[3]).items.push(f);
+                });
+                let html = '';
+                meals.forEach(meal => {
+                    if (meal.items.length === 0) return;
+                    const mCal = meal.items.reduce((s,f)=>s+f.totalCal,0);
+                    html += '<div style="font-size:13px; font-weight:600; color:#666; margin:1rem 0 0.5rem; display:flex; justify-content:space-between;"><span>' + meal.label + '</span><span style="font-weight:400;">' + mCal + ' cal</span></div>';
+                    html += meal.items.map(f =>
+                        '<div class="log-item"><div>' +
+                        '<div class="log-name">' + f.foodName + '</div>' +
+                        '<div class="log-qty">' + f.quantity + ' ' + f.unit + ' <span style="color:#ff69b4;font-weight:500;">🕐 ' + f.time + '</span></div>' +
+                        '<div class="log-nutrition">' + f.totalCal + ' cal | ' + f.totalProtein + 'g P' + ((f.totalCarb||f.totalFat) ? ' | ' + (f.totalCarb||0) + 'g C | ' + (f.totalFat||0) + 'g F' : '') + '</div>' +
+                        '</div><div style="display:flex; flex-direction:column; gap:0.35rem; margin-left:1rem;">' +
+                        '<button onclick="saveFavorite(\'' + f.id + '\')" title="บันทึกเป็นมื้อโปรด" style="background:rgba(255,220,150,0.4); padding:0.4rem 0.6rem; font-size:12px;">⭐</button>' +
+                        '<button class="btn-delete" style="margin-left:0;" onclick="removeFood(\'' + f.id + '\')">ลบ</button>' +
+                        '</div></div>'
+                    ).join('');
+                });
+                logList.innerHTML = html;
             } else { logPanel.classList.add('hidden'); emptyState.classList.remove('hidden'); }
+
+            updateWaterDisplay();
+            updateStepDisplay();
+        }
+
+        // แบ่งมื้อจากเวลา
+        function mealFromTime(time) {
+            if (!time) return 'snack';
+            const h = parseInt(time.split(':')[0]);
+            if (h >= 4 && h < 11) return 'breakfast';
+            if (h >= 11 && h < 15) return 'lunch';
+            if (h >= 15 && h < 21) return 'dinner';
+            return 'snack';
         }
 
         function updateDate() {
