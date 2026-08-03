@@ -67,6 +67,11 @@
         .view-tab { flex: 1; padding: 0.7rem; text-align: center; border-radius: 8px; background: #f0f0f0; font-size: 14px; cursor: pointer; font-weight: 500; }
         .view-tab.active { background: linear-gradient(135deg, rgba(176,224,230,0.5), rgba(200,200,255,0.4)); }
         .chart-box { background: #fafafa; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(200,200,200,0.2); }
+        .consist-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
+        .consist-label { font-size: 13px; color: #444; flex: 0 0 auto; width: 110px; }
+        .consist-bar { flex: 1; height: 10px; background: rgba(0,0,0,0.06); border-radius: 6px; overflow: hidden; }
+        .consist-fill { height: 100%; border-radius: 6px; transition: width 0.4s; }
+        .consist-count { font-size: 12px; font-weight: 600; color: #333; flex: 0 0 auto; width: 42px; text-align: right; }
         .chart-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 0.75rem; }
         .range-btns { display: flex; gap: 0.5rem; margin-bottom: 1rem; justify-content: center; }
         .range-btn { padding: 0.4rem 0.9rem; border-radius: 6px; background: #f0f0f0; font-size: 12px; cursor: pointer; }
@@ -264,6 +269,20 @@
                 <div class="header-gradient">
                     <h1>📈 สถิติย้อนหลัง</h1>
                     <div class="subtitle" id="statsRangeLabel">7 วันล่าสุด</div>
+                </div>
+
+                <div id="weeklyReport" class="card hidden" style="background:linear-gradient(135deg, rgba(255,240,220,0.7), rgba(220,240,230,0.6)); border:none;">
+                    <div style="font-size:17px; font-weight:700; color:#333; margin-bottom:0.25rem;">📋 สรุปสัปดาห์นี้</div>
+                    <div class="food-info" id="reportDateRange" style="margin-bottom:1rem;"></div>
+                    <div id="reportHeadline" style="font-size:15px; font-weight:600; color:#2e7d32; margin-bottom:1rem; line-height:1.5;"></div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1rem;">
+                        <div class="summary-box" style="background:rgba(255,255,255,0.6);"><div class="summary-val" id="repAvgCal">0</div><div class="summary-lbl">แคลเฉลี่ย/วัน</div></div>
+                        <div class="summary-box" style="background:rgba(255,255,255,0.6);"><div class="summary-val" id="repAvgProtein">0</div><div class="summary-lbl">โปรตีนเฉลี่ย/วัน</div></div>
+                        <div class="summary-box" style="background:rgba(255,255,255,0.6);"><div class="summary-val" id="repWeight">-</div><div class="summary-lbl">น้ำหนักเปลี่ยน</div></div>
+                        <div class="summary-box" style="background:rgba(255,255,255,0.6);"><div class="summary-val" id="repSteps">0</div><div class="summary-lbl">ก้าวเฉลี่ย/วัน</div></div>
+                    </div>
+                    <div style="font-size:13px; font-weight:600; color:#333; margin-bottom:0.5rem;">🎯 ความสม่ำเสมอ (จาก 7 วัน)</div>
+                    <div id="reportConsistency"></div>
                 </div>
 
                 <div class="range-btns">
@@ -1132,6 +1151,91 @@
             const calGoal = parseInt(document.getElementById('calGoal').value);
             drawChart('calChart', calChartObj, labels, calData, 'rgba(255,180,80,1)', 'rgba(255,200,124,0.3)', calGoal, (o)=>calChartObj=o);
             drawChart('proteinChart', proteinChartObj, labels, proteinData, 'rgba(255,130,160,1)', 'rgba(255,182,193,0.3)', proteinGoal, (o)=>proteinChartObj=o);
+
+            renderWeeklyReport();
+        }
+
+        // ===== WEEKLY REPORT =====
+        function renderWeeklyReport() {
+            const report = document.getElementById('weeklyReport');
+            const today = new Date();
+            const keys7 = [], mmdd7 = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(today); d.setDate(d.getDate() - i);
+                keys7.push(d.toISOString().split('T')[0]);
+            }
+            // รวมข้อมูล 7 วัน
+            let calSum = 0, proteinSum = 0, stepSum = 0;
+            let daysLogged = 0, daysProtein = 0, daysWater = 0, daysSteps = 0;
+            const proteinGoal = parseInt(document.getElementById('proteinGoal').value);
+            keys7.forEach(k => {
+                const dayFoods = foods.filter(f => f.date === k);
+                const dCal = dayFoods.reduce((s,f)=>s+f.totalCal,0);
+                const dProtein = dayFoods.reduce((s,f)=>s+f.totalProtein,0);
+                if (dayFoods.length > 0) { daysLogged++; calSum += dCal; proteinSum += dProtein; }
+                if (dProtein >= proteinGoal) daysProtein++;
+                const wk = k.replace(/-/g,'');
+                if ((waterByDate[wk] || 0) >= 8) daysWater++;
+                const st = stepsByDate[wk] || 0;
+                if (st > 0) { daysSteps++; stepSum += st; }
+            });
+
+            if (daysLogged === 0) { report.classList.add('hidden'); return; }
+            report.classList.remove('hidden');
+
+            const avgCal = Math.round(calSum / daysLogged);
+            const avgProtein = Math.round(proteinSum / daysLogged * 10) / 10;
+            const avgSteps = daysSteps ? Math.round(stepSum / daysSteps) : 0;
+
+            // ช่วงวันที่
+            const start = new Date(today); start.setDate(start.getDate() - 6);
+            document.getElementById('reportDateRange').textContent =
+                start.toLocaleDateString('th-TH',{day:'numeric',month:'short'}) + ' – ' + today.toLocaleDateString('th-TH',{day:'numeric',month:'short'});
+
+            document.getElementById('repAvgCal').textContent = avgCal;
+            document.getElementById('repAvgProtein').textContent = avgProtein + 'g';
+            document.getElementById('repSteps').textContent = avgSteps ? avgSteps.toLocaleString() : '-';
+
+            // น้ำหนักเปลี่ยนใน 7 วัน
+            const w7 = weights.filter(w => keys7.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date));
+            const repWeightEl = document.getElementById('repWeight');
+            if (w7.length >= 2) {
+                const diff = Math.round((w7[w7.length-1].weight - w7[0].weight)*10)/10;
+                repWeightEl.textContent = (diff>0?'+':'') + diff + ' kg';
+                repWeightEl.style.color = diff > 0 ? '#e57373' : (diff < 0 ? '#2e7d32' : '#333');
+            } else {
+                repWeightEl.textContent = '-';
+                repWeightEl.style.color = '#333';
+            }
+
+            // แถบความสม่ำเสมอ
+            const rows = [
+                { label: 'จดอาหาร', count: daysLogged, color: 'rgba(130,177,255,0.9)' },
+                { label: 'ถึงเป้าโปรตีน', count: daysProtein, color: 'rgba(255,130,160,0.9)' },
+                { label: 'ดื่มน้ำครบ 8 แก้ว', count: daysWater, color: 'rgba(100,180,255,0.9)' },
+                { label: 'บันทึกก้าว', count: daysSteps, color: 'rgba(120,200,140,0.9)' }
+            ];
+            document.getElementById('reportConsistency').innerHTML = rows.map(r =>
+                '<div class="consist-row">' +
+                '<span class="consist-label">' + r.label + '</span>' +
+                '<span class="consist-bar"><span class="consist-fill" style="width:' + Math.round(r.count/7*100) + '%; background:' + r.color + ';"></span></span>' +
+                '<span class="consist-count">' + r.count + '/7</span>' +
+                '</div>'
+            ).join('');
+
+            // headline ให้กำลังใจตามผลจริง (ไม่ตัดสิน — เน้นความสม่ำเสมอ + ชมสิ่งที่ทำได้)
+            let msg = '';
+            const best = Math.max(daysLogged, daysProtein, daysWater, daysSteps);
+            if (daysLogged >= 6 && daysProtein >= 5) {
+                msg = '🌟 สุดยอด! สัปดาห์นี้จดสม่ำเสมอมากและถึงเป้าโปรตีน ' + daysProtein + ' วัน ทำต่อไปแบบนี้เลย';
+            } else if (daysLogged >= 5) {
+                msg = '👍 จดได้สม่ำเสมอดี (' + daysLogged + '/7 วัน) ความสม่ำเสมอคือกุญแจสำคัญ สัปดาห์หน้าลองเพิ่มโปรตีนอีกนิด';
+            } else if (daysLogged >= 3) {
+                msg = '💪 เริ่มได้ดีแล้ว จดไป ' + daysLogged + ' วัน ลองตั้งเป้าจดให้ครบทุกวันสัปดาห์หน้านะ';
+            } else {
+                msg = '🌱 ทุกการเริ่มต้นมีค่า จดได้ ' + daysLogged + ' วันแล้ว ค่อยๆ สร้างเป็นนิสัยไปด้วยกัน';
+            }
+            document.getElementById('reportHeadline').textContent = msg;
         }
 
         function drawChart(canvasId, existing, labels, data, borderColor, bgColor, goalLine, saveRef) {
